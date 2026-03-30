@@ -82,6 +82,11 @@ const SUPPLIERS = [
   { code: "MI", name: "MI Windows" },
   { code: "PROVIA", name: "ProVia (Doors)" },
 ];
+const CASING_SIZES = ["", "2-1/4\"", "2-3/4\"", "3-1/4\"", "3-1/2\"", "4-1/4\"", "Custom"];
+const STOOL_SIZES = ["", "1x4", "1x6", "5/4 x 4", "5/4 x 6", "Custom"];
+const EXT_TRIM_MATERIALS = ["", "Aluminum", "Fiber Cement", "LP SmartSide", "TruWood", "PVC"];
+const CAULK_COLORS = ["White", "Almond", "Bronze", "Black", "Clay", "Clear", "Custom"];
+const METAL_ROLL_SQFT = 50 * 100; // 50' x 100' roll
 
 function parseDim(s) {
   if (!s) return 0;
@@ -249,9 +254,9 @@ function calcDoorMaterials(d) {
 
 function getPcs(t) { return WINDOW_TYPES.find(x => x.code === t)?.pcs || 1; }
 
-const mkWin = () => ({ id: Date.now() + Math.random(), location: "", qty: 1, type: "DH", config: "", netW: "", netH: "", roughW: "", roughH: "", gridType: "None", gridPattern: "", gridLocation: "Both", litesW: "", litesH: "", tempered: "No", glass: "DP LoE2 Ar", glassTexture: "Clear", screen: "Full", casing: false, jamb: false, stools: false, wrapTrim: false, extTrim: false, extTrimSize: "", extTrimTexture: "", winWrap: "", metalRoll: "", metalColor: "", shapeCode: "", shapeNotes: "", baySeatDepth: "", bayProjection: "", bayPanels: "", bowPanelCount: "4", notes: "", expanded: true });
-const mkDoor = () => ({ id: Date.now() + Math.random(), type: "", location: "", qty: 1, handing: "", operation: "", netW: "", netH: "", roughW: "", roughH: "", glassConfig: "", glass: "DP LoE2 Ar", glassTexture: "Clear", hardwareColor: "", hardwareType: "", jambThickness: "", sidelites: "None", sideliteW: "", transom: false, transomH: "", threshold: "", doorScreen: "", jamb: false, casing: false, wrapTrim: false, extTrim: false, extTrimSize: "", extTrimTexture: "", doorWrap: "", notes: "", expanded: true });
-const mkProj = () => ({ customer: "", address: "", date: new Date().toISOString().split("T")[0], installType: "Replacement", brand: "", series: "", supplier: "GENERIC", brickmould: "", jChannel: "", wallThick: "2x4", winIntColor: "White", winExtColor: "White", doorIntColor: "White", doorExtColor: "White", specialColor: "", stoolColor: "", jambSpecies: "", jambFinish: "", jambColor: "", jambStainColor: "", casingSpecies: "", casingFinish: "", casingColor: "", casingStainColor: "", zapierUrl: "" });
+const mkWin = () => ({ id: Date.now() + Math.random(), location: "", qty: 1, type: "DH", config: "", netW: "", netH: "", roughW: "", roughH: "", gridType: "None", gridPattern: "", gridLocation: "Both", litesW: "", litesH: "", tempered: "No", glass: "DP LoE2 Ar", glassTexture: "Clear", screen: "Full", casing: false, jamb: false, stools: false, stoolCount: 1, wrapTrim: false, extTrim: false, extTrimSize: "", extTrimTexture: "", extTrimMaterial: "", winWrap: "", metalRoll: "", metalColor: "", shapeCode: "", shapeNotes: "", baySeatDepth: "", bayProjection: "", bayPanels: "", bowPanelCount: "4", notes: "", expanded: true });
+const mkDoor = () => ({ id: Date.now() + Math.random(), type: "", location: "", qty: 1, handing: "", operation: "", netW: "", netH: "", roughW: "", roughH: "", glassConfig: "", glass: "DP LoE2 Ar", glassTexture: "Clear", hardwareColor: "", hardwareType: "", jambThickness: "", sidelites: "None", sideliteW: "", transom: false, transomH: "", threshold: "", doorScreen: "", jamb: false, casing: false, wrapTrim: false, extTrim: false, extTrimSize: "", extTrimTexture: "", extTrimMaterial: "", doorWrap: "", notes: "", expanded: true });
+const mkProj = () => ({ customer: "", address: "", date: new Date().toISOString().split("T")[0], installType: "Replacement", brand: "", series: "", supplier: "GENERIC", brickmould: "", jChannel: "", wallThick: "2x4", winIntColor: "White", winExtColor: "White", doorIntColor: "White", doorExtColor: "White", specialColor: "", stoolColor: "", stoolSize: "", jambSpecies: "", jambFinish: "", jambColor: "", jambStainColor: "", casingSpecies: "", casingSize: "", casingFinish: "", casingColor: "", casingStainColor: "", extTrimMaterial: "", caulkIntColor: "White", caulkExtColor: "White", zapierUrl: "" });
 
 function ShapeCanvas({ win, onChange }) {
   const pw = 200, ph = 160;
@@ -308,19 +313,38 @@ function BayBowConfig({ win, onChange }) {
   };
   const displayPanels = [...Array(panelCount)].map((_, i) => panels[i] || (i === 0 || i === panelCount - 1 ? "DH" : "PIC"));
   const bbInp = { width: "100%", padding: "8px 10px", fontSize: 13, border: `1px solid ${GRAY_BORDER}`, borderRadius: 6, boxSizing: "border-box" };
+  const bbLbl = { fontSize: 10, fontWeight: 600, color: "#4b5563", display: "block", marginBottom: 2, textTransform: "uppercase" };
   return (
     <div style={{ marginTop: 10, padding: 12, background: `${NAVY}06`, border: `1px solid ${NAVY}20`, borderRadius: 8 }}>
-      <div style={{ fontSize: 12, fontWeight: 700, color: NAVY, marginBottom: 8 }}>{isBow ? "BOW" : "BAY"} WINDOW CONFIG</div>
-      <div style={{ display: "grid", gridTemplateColumns: isBow ? "1fr 1fr 1fr" : "1fr 1fr", gap: 8, marginBottom: 10 }}>
-        <div><label style={{ fontSize: 10, fontWeight: 600, color: "#4b5563", display: "block", marginBottom: 2 }}>SEAT DEPTH</label><input value={win.baySeatDepth || ""} onChange={e => onChange("baySeatDepth", e.target.value)} placeholder='18"' style={bbInp} /></div>
-        <div><label style={{ fontSize: 10, fontWeight: 600, color: "#4b5563", display: "block", marginBottom: 2 }}>PROJECTION</label><input value={win.bayProjection || ""} onChange={e => onChange("bayProjection", e.target.value)} placeholder='12"' style={bbInp} /></div>
-        {isBow && <div><label style={{ fontSize: 10, fontWeight: 600, color: "#4b5563", display: "block", marginBottom: 2 }}>PANEL COUNT</label><select value={win.bowPanelCount || "4"} onChange={e => onChange("bowPanelCount", e.target.value)} style={{ ...bbInp, appearance: "auto" }}>{[3,4,5,6].map(n => <option key={n} value={n}>{n} panels</option>)}</select></div>}
+      <div style={{ fontSize: 12, fontWeight: 700, color: NAVY, marginBottom: 10 }}>{isBow ? "BOW" : "BAY"} WINDOW CONFIG</div>
+      <div style={{ display: "grid", gridTemplateColumns: isBow ? "1fr 1fr 1fr 1fr" : "1fr 1fr 1fr", gap: 8, marginBottom: 10 }}>
+        <div>
+          <label style={bbLbl}>Seat Depth</label>
+          <input value={win.baySeatDepth || ""} onChange={e => onChange("baySeatDepth", e.target.value)} placeholder='e.g. 18"' style={bbInp} />
+          <div style={{ fontSize: 9, color: "#888", marginTop: 2 }}>Inside ledge depth</div>
+        </div>
+        <div>
+          <label style={bbLbl}>Projection</label>
+          <input value={win.bayProjection || ""} onChange={e => onChange("bayProjection", e.target.value)} placeholder='e.g. 12"' style={bbInp} />
+          <div style={{ fontSize: 9, color: "#888", marginTop: 2 }}>How far it sticks out</div>
+        </div>
+        <div>
+          <label style={bbLbl}>Roof / Head Style</label>
+          <select value={win.bayRoofStyle || ""} onChange={e => onChange("bayRoofStyle", e.target.value)} style={{ ...bbInp, appearance: "auto" }}>
+            <option value="">-- Select --</option>
+            <option>Flat</option><option>Hip</option><option>Shed</option>
+          </select>
+        </div>
+        {isBow && <div>
+          <label style={bbLbl}>Panel Count</label>
+          <select value={win.bowPanelCount || "4"} onChange={e => onChange("bowPanelCount", e.target.value)} style={{ ...bbInp, appearance: "auto" }}>{[3,4,5,6].map(n => <option key={n} value={n}>{n} panels</option>)}</select>
+        </div>}
       </div>
-      <div style={{ fontSize: 10, fontWeight: 600, color: "#4b5563", marginBottom: 4 }}>PANEL TYPES (left to right)</div>
+      <div style={{ fontSize: 10, fontWeight: 600, color: "#4b5563", marginBottom: 6, textTransform: "uppercase" }}>Panel Types (left → right)</div>
       <div style={{ display: "flex", gap: 6 }}>
         {displayPanels.map((pt, i) => (
-          <div key={i} style={{ flex: 1, textAlign: "center" }}>
-            <div style={{ fontSize: 9, color: ORANGE, fontWeight: 700, marginBottom: 2 }}>P{i + 1}</div>
+          <div key={i} style={{ flex: 1, textAlign: "center", background: "#fff", padding: "6px 4px", borderRadius: 6, border: `1px solid ${GRAY_BORDER}` }}>
+            <div style={{ fontSize: 9, color: ORANGE, fontWeight: 700, marginBottom: 4 }}>Panel {i + 1}</div>
             <select value={pt} onChange={e => setPanelType(i, e.target.value)} style={{ width: "100%", padding: "6px 4px", fontSize: 11, border: `1px solid ${GRAY_BORDER}`, borderRadius: 4, appearance: "auto" }}>
               {BAY_BOW_PANEL_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
@@ -356,7 +380,7 @@ function WinIcon({ type, gridType, gridLocation, litesW, litesH }) {
   const a = { stroke: ORANGE, strokeWidth: 1.5, fill: "none" };
   const gS = { stroke: `${NAVY}60`, strokeWidth: 0.7 };
   const hasGrid = gridType && gridType !== "None";
-  const lW = parseInt(litesW) || 2, lH = parseInt(litesH) || 2;
+  const lW = parseInt(litesW) || 1, lH = parseInt(litesH) || 1;
   const renderGridLines = (x, y, gw, gh) => {
     const lines = [];
     for (let i = 1; i < lW; i++) lines.push(<line key={`gv${i}`} x1={x + (gw / lW) * i} y1={y} x2={x + (gw / lW) * i} y2={y + gh} {...gS} />);
@@ -450,7 +474,31 @@ export default function App() {
     } catch (e) { setZapStatus("Failed -- check webhook URL"); setTimeout(() => setZapStatus(""), 5000); }
   };
 
-  const matSum = (() => { let jLF = 0, cLF = 0, eLF = 0, jP = 0, cP = 0; wins.forEach(w => { const m = calcMaterials(w); if (!m) return; if (w.jamb) { jLF += parseFloat(m.jambLF); jP += m.jambPcs; } if (w.casing) { cLF += parseFloat(m.casingLF); cP += m.casingPcs; } if (w.extTrim) { eLF += parseFloat(m.extLF); } }); return { jLF: jLF.toFixed(1), cLF: cLF.toFixed(1), eLF: eLF.toFixed(1), jP, cP }; })();
+  const matSum = (() => {
+    let jLF = 0, cLF = 0, eLF = 0, jP = 0, cP = 0, metalSqFt = 0, stoolTotal = 0;
+    wins.forEach(w => {
+      const m = calcMaterials(w);
+      if (m) {
+        if (w.jamb) { jLF += parseFloat(m.jambLF); jP += m.jambPcs; }
+        if (w.casing) { cLF += parseFloat(m.casingLF); cP += m.casingPcs; }
+        if (w.extTrim) { eLF += parseFloat(m.extLF); }
+      }
+      if (w.metalRoll) {
+        const H = parseDim(w.netH || w.roughH), W = parseDim(w.netW || w.roughW);
+        if (H && W) {
+          const qty = parseInt(w.qty) || 1;
+          const linearIn = 2 * (H + 10) + (W + 10); // 2 sides + head, +10" per piece
+          metalSqFt += (linearIn / 12) * 0.5 * qty; // 6" = 0.5ft wide strips
+        }
+      }
+      if (w.stools) stoolTotal += (parseInt(w.stoolCount) || 1) * (parseInt(w.qty) || 1);
+    });
+    const caulkWin = wins.reduce((s, w) => s + (parseInt(w.qty) || 0), 0);
+    const caulkDoor = doors.reduce((s, d) => s + (parseInt(d.qty) || 0), 0);
+    const caulkTotal = caulkWin + caulkDoor;
+    const metalRolls = metalSqFt > 0 ? Math.ceil(metalSqFt / METAL_ROLL_SQFT * 10) / 10 : 0; // show to 1 decimal
+    return { jLF: jLF.toFixed(1), cLF: cLF.toFixed(1), eLF: eLF.toFixed(1), jP, cP, metalSqFt: metalSqFt.toFixed(1), metalRolls, stoolTotal, caulkTotal, caulkWin, caulkDoor };
+  })();
   const doorMatSum = (() => { let jLF = 0, cLF = 0, eLF = 0, jP = 0, cP = 0, slE = ""; doors.forEach(d => { const m = calcDoorMaterials(d); if (!m) return; if (d.jamb) { jLF += parseFloat(m.jambLF); jP += m.jambPcs; } if (d.casing) { cLF += parseFloat(m.casingLF); cP += m.casingPcs; } if (d.extTrim) { eLF += parseFloat(m.extLF); if (m.sideliteExtra) slE += (slE ? ", " : "") + m.sideliteExtra; } }); return { jLF: jLF.toFixed(1), cLF: cLF.toFixed(1), eLF: eLF.toFixed(1), jP, cP, slE }; })();
 
   const inp = { width: "100%", padding: "10px 12px", fontSize: 15, border: `1px solid ${GRAY_BORDER}`, borderRadius: 6, background: "#fff", color: "#1a1a1a", boxSizing: "border-box" };
@@ -524,13 +572,16 @@ export default function App() {
             <tfoot><tr style={{ background: NAVY, color: "#fff", fontWeight: 700 }}><td colSpan="2" style={{ padding: "5px 6px" }}>TOTALS</td><td style={{ padding: "5px 3px", textAlign: "center" }}>{tQty}</td><td colSpan="16" /><td style={{ padding: "5px 3px", textAlign: "center", color: ORANGE, fontSize: 12 }}>{tPcs}</td></tr></tfoot>
           </table>
         </div>
-        {(parseFloat(matSum.jLF) > 0 || parseFloat(matSum.cLF) > 0 || parseFloat(matSum.eLF) > 0) && (
+        {(parseFloat(matSum.jLF) > 0 || parseFloat(matSum.cLF) > 0 || parseFloat(matSum.eLF) > 0 || matSum.stoolTotal > 0 || matSum.metalRolls > 0 || matSum.caulkTotal > 0) && (
           <div style={{ marginTop: 16, padding: 12, border: `1px solid ${GRAY_BORDER}`, borderRadius: 6, background: GRAY_BG }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: NAVY, marginBottom: 8 }}>WINDOW MATERIAL ESTIMATE</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, fontSize: 11 }}>
-              {parseFloat(matSum.jLF) > 0 && <div><strong>Interior Jamb:</strong> {matSum.jLF} LF ({matSum.jP} pcs)</div>}
-              {parseFloat(matSum.cLF) > 0 && <div><strong>Interior Casing:</strong> {matSum.cLF} LF ({matSum.cP} pcs)</div>}
-              {parseFloat(matSum.eLF) > 0 && <div><strong>Exterior Trim:</strong> {matSum.eLF} LF</div>}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, fontSize: 11 }}>
+              {parseFloat(matSum.jLF) > 0 && <div><strong>Interior Jamb{proj.jambSpecies ? ` (${proj.jambSpecies})` : ""}:</strong> {matSum.jLF} LF — {matSum.jP} pcs</div>}
+              {parseFloat(matSum.cLF) > 0 && <div><strong>Interior Casing{proj.casingSize ? ` ${proj.casingSize}` : ""}{proj.casingSpecies ? ` ${proj.casingSpecies}` : ""}:</strong> {matSum.cLF} LF — {matSum.cP} pcs</div>}
+              {parseFloat(matSum.eLF) > 0 && <div><strong>Exterior Trim{wins.find(w => w.extTrim && w.extTrimSize) ? ` ${wins.find(w => w.extTrim && w.extTrimSize).extTrimSize}` : ""}{proj.extTrimMaterial ? ` ${proj.extTrimMaterial}` : ""}:</strong> {matSum.eLF} LF</div>}
+              {matSum.stoolTotal > 0 && <div><strong>Stools{proj.stoolSize ? ` (${proj.stoolSize})` : ""}:</strong> {matSum.stoolTotal} pcs</div>}
+              {matSum.metalRolls > 0 && <div><strong>Metal Wrap (6" strips):</strong> {matSum.metalSqFt} sq ft — {matSum.metalRolls < 1 ? `< 1 roll` : `${matSum.metalRolls} roll${matSum.metalRolls > 1 ? "s" : ""}`} of 50'×100'</div>}
+              {matSum.caulkTotal > 0 && <div><strong>Caulking:</strong> {matSum.caulkTotal} tubes int ({proj.caulkIntColor}) + {matSum.caulkTotal} tubes ext ({proj.caulkExtColor})</div>}
             </div>
           </div>
         )}
@@ -573,10 +624,10 @@ export default function App() {
           {(parseFloat(doorMatSum.jLF) > 0 || parseFloat(doorMatSum.cLF) > 0 || parseFloat(doorMatSum.eLF) > 0) && (
             <div style={{ marginTop: 10, padding: 12, border: `1px solid ${GRAY_BORDER}`, borderRadius: 6, background: GRAY_BG }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: NAVY, marginBottom: 8 }}>DOOR MATERIAL ESTIMATE</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, fontSize: 11 }}>
-                {parseFloat(doorMatSum.jLF) > 0 && <div><strong>Jamb Ext:</strong> {doorMatSum.jLF} LF ({doorMatSum.jP} pcs)</div>}
-                {parseFloat(doorMatSum.cLF) > 0 && <div><strong>Casing (both sides):</strong> {doorMatSum.cLF} LF ({doorMatSum.cP} pcs)</div>}
-                {parseFloat(doorMatSum.eLF) > 0 && <div><strong>Ext Trim:</strong> {doorMatSum.eLF} LF{doorMatSum.slE ? ` ${doorMatSum.slE}` : ""}</div>}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, fontSize: 11 }}>
+                {parseFloat(doorMatSum.jLF) > 0 && <div><strong>Jamb Ext{proj.jambSpecies ? ` (${proj.jambSpecies})` : ""}:</strong> {doorMatSum.jLF} LF — {doorMatSum.jP} pcs</div>}
+                {parseFloat(doorMatSum.cLF) > 0 && <div><strong>Casing (both sides){proj.casingSize ? ` ${proj.casingSize}` : ""}:</strong> {doorMatSum.cLF} LF — {doorMatSum.cP} pcs</div>}
+                {parseFloat(doorMatSum.eLF) > 0 && <div><strong>Ext Trim{proj.extTrimMaterial ? ` ${proj.extTrimMaterial}` : ""}:</strong> {doorMatSum.eLF} LF{doorMatSum.slE ? ` (${doorMatSum.slE})` : ""}</div>}
               </div>
             </div>
           )}
@@ -592,9 +643,10 @@ export default function App() {
       <div style={{ background: NAVY, padding: "12px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, zIndex: 50, boxShadow: "0 2px 8px rgba(0,0,0,0.2)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}><div style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>UWS</div><div style={{ width: 1, height: 18, background: "rgba(255,255,255,0.3)" }} /><div style={{ fontSize: 12, color: ORANGE, fontWeight: 600 }}>MEASURE SHEET</div></div>
         <div style={{ display: "flex", gap: 6 }}>
-          <button onClick={() => setSettingsOpen(!settingsOpen)} style={{ ...bS, padding: "5px 10px", fontSize: 11, color: "#fff", borderColor: "rgba(255,255,255,0.4)" }}> Settings</button>
-          <button onClick={() => setShowJobs(!showJobs)} style={{ ...bS, padding: "5px 10px", fontSize: 11, color: "#fff", borderColor: "rgba(255,255,255,0.4)" }}>Jobs</button>
-          <button onClick={newJob} style={{ ...bS, padding: "5px 10px", fontSize: 11, color: "#fff", borderColor: "rgba(255,255,255,0.4)" }}>+ New</button>
+          <button onClick={() => setSettingsOpen(!settingsOpen)} style={{ ...bS, padding: "5px 10px", fontSize: 11, color: "#fff", background: "transparent", borderColor: "rgba(255,255,255,0.4)" }}>Settings</button>
+          <button onClick={() => setShowJobs(!showJobs)} style={{ ...bS, padding: "5px 10px", fontSize: 11, color: "#fff", background: "transparent", borderColor: "rgba(255,255,255,0.4)" }}>Jobs</button>
+          <button onClick={newJob} style={{ ...bS, padding: "5px 10px", fontSize: 11, color: "#fff", background: "transparent", borderColor: "rgba(255,255,255,0.4)" }}>+ New</button>
+          <a href="/final-measure" style={{ ...bP, padding: "5px 10px", fontSize: 11, textDecoration: "none", display: "inline-flex", alignItems: "center" }}>Final Measure</a>
         </div>
       </div>
       {settingsOpen && <div style={{ background: "#fff", border: `1px solid ${GRAY_BORDER}`, margin: "0 12px", borderRadius: "0 0 8px 8px", boxShadow: "0 4px 12px rgba(0,0,0,0.1)", padding: 14 }}>
@@ -649,11 +701,27 @@ export default function App() {
               {proj.jambFinish === "Stained" ? <div><label style={lbl}>Stain Color</label><select style={sel} value={proj.jambStainColor} onChange={e => up("jambStainColor", e.target.value)}>{STAIN_COLORS.map(c => <option key={c} value={c}>{c || "-- Select --"}</option>)}</select></div> : <div><label style={lbl}>Jamb Color</label><input style={inp} value={proj.jambColor} onChange={e => up("jambColor", e.target.value)} placeholder="Color" /></div>}
               {proj.jambFinish === "Stained" && proj.jambStainColor === "Custom" ? <div><label style={lbl}>Custom Stain</label><input style={inp} value={proj.jambColor} onChange={e => up("jambColor", e.target.value)} placeholder="Custom stain name" /></div> : <div />}
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginTop: 8 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", gap: 8, marginTop: 8 }}>
               <div><label style={lbl}>Casing Species</label><select style={sel} value={proj.casingSpecies} onChange={e => up("casingSpecies", e.target.value)}>{JAMB_SPECIES.map(s => <option key={s} value={s}>{s || "-- Select --"}</option>)}</select></div>
+              <div><label style={lbl}>Casing Size</label><select style={sel} value={proj.casingSize} onChange={e => up("casingSize", e.target.value)}>{CASING_SIZES.map(s => <option key={s} value={s}>{s || "-- Select --"}</option>)}</select></div>
               <div><label style={lbl}>Casing Finish</label><select style={sel} value={proj.casingFinish} onChange={e => up("casingFinish", e.target.value)}>{FINISH_TYPES.map(f => <option key={f} value={f}>{f || "-- Select --"}</option>)}</select></div>
               {proj.casingFinish === "Stained" ? <div><label style={lbl}>Stain Color</label><select style={sel} value={proj.casingStainColor} onChange={e => up("casingStainColor", e.target.value)}>{STAIN_COLORS.map(c => <option key={c} value={c}>{c || "-- Select --"}</option>)}</select></div> : <div><label style={lbl}>Casing Color</label><input style={inp} value={proj.casingColor} onChange={e => up("casingColor", e.target.value)} placeholder="Color" /></div>}
               {proj.casingFinish === "Stained" && proj.casingStainColor === "Custom" ? <div><label style={lbl}>Custom Stain</label><input style={inp} value={proj.casingColor} onChange={e => up("casingColor", e.target.value)} placeholder="Custom stain name" /></div> : <div />}
+            </div>
+            <div style={{ ...sec, marginTop: 18, marginBottom: 8 }}>Stools & Exterior Trim</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+              <div><label style={lbl}>Stool Size</label><select style={sel} value={proj.stoolSize} onChange={e => up("stoolSize", e.target.value)}>{STOOL_SIZES.map(s => <option key={s} value={s}>{s || "-- Select --"}</option>)}</select></div>
+              <div><label style={lbl}>Ext Trim Material</label><select style={sel} value={proj.extTrimMaterial} onChange={e => up("extTrimMaterial", e.target.value)}>{EXT_TRIM_MATERIALS.map(m => <option key={m} value={m}>{m || "-- Select --"}</option>)}</select></div>
+              <div />
+            </div>
+            <div style={{ ...sec, marginTop: 18, marginBottom: 8 }}>Caulking</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 2fr", gap: 8 }}>
+              <div><label style={lbl}>Interior Caulk Color</label><select style={sel} value={proj.caulkIntColor} onChange={e => up("caulkIntColor", e.target.value)}>{CAULK_COLORS.map(c => <option key={c}>{c}</option>)}</select></div>
+              <div><label style={lbl}>Exterior Caulk Color</label><select style={sel} value={proj.caulkExtColor} onChange={e => up("caulkExtColor", e.target.value)}>{CAULK_COLORS.map(c => <option key={c}>{c}</option>)}</select></div>
+              <div style={{ padding: "10px 12px", background: GRAY_BG, borderRadius: 6, fontSize: 12, display: "flex", alignItems: "center", gap: 16 }}>
+                <span><strong>Int Caulk:</strong> {wins.reduce((s,w) => s + (parseInt(w.qty)||0), 0) + doors.reduce((s,d) => s + (parseInt(d.qty)||0), 0)} tubes ({proj.caulkIntColor})</span>
+                <span><strong>Ext Caulk:</strong> {wins.reduce((s,w) => s + (parseInt(w.qty)||0), 0) + doors.reduce((s,d) => s + (parseInt(d.qty)||0), 0)} tubes ({proj.caulkExtColor})</span>
+              </div>
             </div>
           </>}
         </div>
@@ -694,8 +762,8 @@ export default function App() {
               </div>
               {w.gridType !== "None" && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 3fr", gap: 8, marginTop: 8 }}>
                 <div><label style={lbl}>Location</label><select style={sel} value={w.gridLocation || "Both"} onChange={e => uw(w.id, "gridLocation", e.target.value)}>{GRID_LOCATIONS.map(g => <option key={g}>{g}</option>)}</select></div>
-                <div><label style={lbl}>Lites W</label><input style={inp} value={w.litesW} onChange={e => uw(w.id, "litesW", e.target.value)} placeholder="2" /></div>
-                <div><label style={lbl}>Lites H</label><input style={inp} value={w.litesH} onChange={e => uw(w.id, "litesH", e.target.value)} placeholder="3" /></div><div />
+                <div><label style={lbl}>Lites Wide</label><input style={inp} value={w.litesW} onChange={e => uw(w.id, "litesW", e.target.value)} placeholder="cols" /></div>
+                <div><label style={lbl}>Lites Tall</label><input style={inp} value={w.litesH} onChange={e => uw(w.id, "litesH", e.target.value)} placeholder="rows" /></div><div />
               </div>}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginTop: 8 }}>
                 <div><label style={lbl}>Metal Roll</label><select style={sel} value={w.metalRoll} onChange={e => uw(w.id, "metalRoll", e.target.value)}>{METAL_OPTIONS.map(m => <option key={m} value={m}>{m || "-- None --"}</option>)}</select></div>
@@ -707,22 +775,26 @@ export default function App() {
               {w.type === "SHAPE" && <ShapeCanvas win={w} onChange={(f, v) => uw(w.id, f, v)} />}
               {isBayBow && <BayBowConfig win={w} onChange={(f, v) => uw(w.id, f, v)} />}
               <div style={{ display: "flex", flexWrap: "wrap", gap: 14, marginTop: 10, padding: "8px 10px", background: GRAY_BG, borderRadius: 8 }}>
-                {[["casing", "Casing"], ["jamb", "Jamb Ext"], ["stools", "Stools"], ["wrapTrim", "Wrap"]].map(([f, l]) =>
+                {[["casing", "Casing"], ["jamb", "Jamb Ext"], ["wrapTrim", "Wrap"]].map(([f, l]) =>
                   <label key={f} style={chk}><input type="checkbox" checked={w[f]} onChange={e => uw(w.id, f, e.target.checked)} style={{ width: 20, height: 20, accentColor: ORANGE }} />{l}</label>
                 )}
+                <label style={chk}><input type="checkbox" checked={w.stools} onChange={e => uw(w.id, "stools", e.target.checked)} style={{ width: 20, height: 20, accentColor: ORANGE }} />Stools</label>
+                {w.stools && <div style={{ display: "flex", alignItems: "center", gap: 6 }}><label style={{ ...lbl, marginBottom: 0 }}>Count:</label><input style={{ ...inp, width: 60, padding: "4px 8px" }} type="number" min="1" value={w.stoolCount} onChange={e => uw(w.id, "stoolCount", e.target.value)} /></div>}
                 <label style={chk}><input type="checkbox" checked={w.extTrim} onChange={e => uw(w.id, "extTrim", e.target.checked)} style={{ width: 20, height: 20, accentColor: ORANGE }} />Exterior Trim</label>
               </div>
-              {w.extTrim && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 2fr", gap: 8, marginTop: 6 }}>
+              {w.extTrim && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginTop: 6 }}>
                 <div><label style={lbl}>Ext Trim Size</label><select style={sel} value={w.extTrimSize} onChange={e => uw(w.id, "extTrimSize", e.target.value)}>{EXT_TRIM_SIZES.map(s => <option key={s} value={s}>{s || "-- Select --"}</option>)}</select></div>
                 <div><label style={lbl}>Ext Trim Texture</label><select style={sel} value={w.extTrimTexture} onChange={e => uw(w.id, "extTrimTexture", e.target.value)}>{EXT_TRIM_TEXTURES.map(t => <option key={t} value={t}>{t || "-- Select --"}</option>)}</select></div>
+                <div><label style={lbl}>Trim Material</label><select style={sel} value={w.extTrimMaterial} onChange={e => uw(w.id, "extTrimMaterial", e.target.value)}>{EXT_TRIM_MATERIALS.map(m => <option key={m} value={m}>{m || "-- Select --"}</option>)}</select></div>
                 <div />
               </div>}
-              {mats && (w.jamb || w.casing || w.extTrim) && <div style={{ marginTop: 8, padding: "8px 10px", background: `${GREEN}08`, border: `1px solid ${GREEN}30`, borderRadius: 8, fontSize: 11 }}>
-                <div style={{ fontWeight: 700, color: GREEN, marginBottom: 4, fontSize: 12 }}>Material Calc ({mats.width}" {"x"} {mats.height}" {"x"} {w.qty})</div>
+              {mats && (w.jamb || w.casing || w.extTrim || w.stools) && <div style={{ marginTop: 8, padding: "8px 10px", background: `${GREEN}08`, border: `1px solid ${GREEN}30`, borderRadius: 8, fontSize: 11 }}>
+                <div style={{ fontWeight: 700, color: GREEN, marginBottom: 4, fontSize: 12 }}>Material Calc ({mats.width}" x {mats.height}" x {w.qty})</div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-                  {w.jamb && <div><strong>Jamb:</strong> {mats.jambLF} LF {"|"} {mats.jambPcs} pcs<br /><span style={{ color: "#666" }}>{mats.jambDetail}</span></div>}
-                  {w.casing && <div><strong>Casing:</strong> {mats.casingLF} LF {"|"} {mats.casingPcs} pcs<br /><span style={{ color: "#666" }}>{mats.casingDetail}</span></div>}
-                  {w.extTrim && <div><strong>Ext Trim:</strong> {mats.extLF} LF{w.extTrimSize ? ` (${w.extTrimSize}${w.extTrimTexture ? ` ${w.extTrimTexture}` : ""})` : ""}<br /><span style={{ color: "#666" }}>{mats.extDetail}</span></div>}
+                  {w.jamb && <div><strong>Jamb{proj.jambSpecies ? ` (${proj.jambSpecies})` : ""}:</strong> {mats.jambLF} LF | {mats.jambPcs} pcs<br /><span style={{ color: "#666" }}>{mats.jambDetail}</span></div>}
+                  {w.casing && <div><strong>Casing{proj.casingSize ? ` ${proj.casingSize}` : ""}{proj.casingSpecies ? ` ${proj.casingSpecies}` : ""}:</strong> {mats.casingLF} LF | {mats.casingPcs} pcs<br /><span style={{ color: "#666" }}>{mats.casingDetail}</span></div>}
+                  {w.extTrim && <div><strong>Ext Trim{w.extTrimSize ? ` ${w.extTrimSize}` : ""}{w.extTrimMaterial ? ` ${w.extTrimMaterial}` : ""}:</strong> {mats.extLF} LF<br /><span style={{ color: "#666" }}>{mats.extDetail}</span></div>}
+                  {w.stools && proj.stoolSize && <div><strong>Stools ({proj.stoolSize}):</strong> {w.stoolCount || 1} pc{parseInt(w.stoolCount) > 1 ? "s" : ""}</div>}
                 </div>
               </div>}
               <div style={{ display: "flex", gap: 6, marginTop: 10, justifyContent: "flex-end" }}>
@@ -733,13 +805,45 @@ export default function App() {
           </div>
         ); })}
         <button onClick={addWin} style={{ ...bP, width: "100%", marginTop: 6, padding: "13px", fontSize: 15, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 10 }}>+ Add Window</button>
-        {(parseFloat(matSum.jLF) > 0 || parseFloat(matSum.cLF) > 0 || parseFloat(matSum.eLF) > 0) && (
+        {(parseFloat(matSum.jLF) > 0 || parseFloat(matSum.cLF) > 0 || parseFloat(matSum.eLF) > 0 || matSum.stoolTotal > 0 || matSum.metalRolls > 0 || matSum.caulkTotal > 0) && (
           <div style={{ background: "#fff", borderRadius: 10, padding: 14, marginTop: 10, boxShadow: "0 1px 3px rgba(0,0,0,0.08)", border: `2px solid ${GREEN}20` }}>
-            <div onClick={() => setMatOpen(!matOpen)} style={{ display: "flex", justifyContent: "space-between", cursor: "pointer" }}><div style={{ ...sec, color: GREEN, borderColor: GREEN }}>Material Summary</div><span style={{ fontSize: 14, color: GREEN }}>{matOpen ? "v" : ">"}</span></div>
-            {matOpen && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, fontSize: 13 }}>
-              {parseFloat(matSum.jLF) > 0 && <div style={{ padding: 12, background: GRAY_BG, borderRadius: 8 }}><div style={{ fontWeight: 700, color: NAVY, marginBottom: 4 }}>Interior Jamb</div><div style={{ fontSize: 22, fontWeight: 800, color: GREEN }}>{matSum.jLF} LF</div><div style={{ fontSize: 11, color: "#666", marginTop: 2 }}>{matSum.jP} stock pcs</div></div>}
-              {parseFloat(matSum.cLF) > 0 && <div style={{ padding: 12, background: GRAY_BG, borderRadius: 8 }}><div style={{ fontWeight: 700, color: NAVY, marginBottom: 4 }}>Interior Casing</div><div style={{ fontSize: 22, fontWeight: 800, color: GREEN }}>{matSum.cLF} LF</div><div style={{ fontSize: 11, color: "#666", marginTop: 2 }}>{matSum.cP} stock pcs</div></div>}
-              {parseFloat(matSum.eLF) > 0 && <div style={{ padding: 12, background: GRAY_BG, borderRadius: 8 }}><div style={{ fontWeight: 700, color: NAVY, marginBottom: 4 }}>Exterior Trim</div><div style={{ fontSize: 22, fontWeight: 800, color: GREEN }}>{matSum.eLF} LF</div></div>}
+            <div onClick={() => setMatOpen(!matOpen)} style={{ display: "flex", justifyContent: "space-between", cursor: "pointer" }}><div style={{ ...sec, color: GREEN, borderColor: GREEN }}>Window Material Summary</div><span style={{ fontSize: 14, color: GREEN }}>{matOpen ? "v" : ">"}</span></div>
+            {matOpen && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, fontSize: 13 }}>
+              {parseFloat(matSum.jLF) > 0 && <div style={{ padding: 12, background: GRAY_BG, borderRadius: 8 }}>
+                <div style={{ fontWeight: 700, color: NAVY, marginBottom: 2 }}>Interior Jamb</div>
+                {proj.jambSpecies && <div style={{ fontSize: 10, color: "#666", marginBottom: 4 }}>{proj.jambSpecies}{proj.jambFinish ? ` · ${proj.jambFinish}` : ""}</div>}
+                <div style={{ fontSize: 22, fontWeight: 800, color: GREEN }}>{matSum.jLF} LF</div>
+                <div style={{ fontSize: 11, color: "#666", marginTop: 2 }}>{matSum.jP} stock pcs</div>
+              </div>}
+              {parseFloat(matSum.cLF) > 0 && <div style={{ padding: 12, background: GRAY_BG, borderRadius: 8 }}>
+                <div style={{ fontWeight: 700, color: NAVY, marginBottom: 2 }}>Interior Casing</div>
+                {(proj.casingSize || proj.casingSpecies) && <div style={{ fontSize: 10, color: "#666", marginBottom: 4 }}>{[proj.casingSize, proj.casingSpecies, proj.casingFinish].filter(Boolean).join(" · ")}</div>}
+                <div style={{ fontSize: 22, fontWeight: 800, color: GREEN }}>{matSum.cLF} LF</div>
+                <div style={{ fontSize: 11, color: "#666", marginTop: 2 }}>{matSum.cP} stock pcs</div>
+              </div>}
+              {parseFloat(matSum.eLF) > 0 && <div style={{ padding: 12, background: GRAY_BG, borderRadius: 8 }}>
+                <div style={{ fontWeight: 700, color: NAVY, marginBottom: 2 }}>Exterior Trim</div>
+                {(proj.extTrimMaterial || wins.find(w => w.extTrim && w.extTrimSize)?.extTrimSize) && <div style={{ fontSize: 10, color: "#666", marginBottom: 4 }}>{[wins.find(w => w.extTrim && w.extTrimSize)?.extTrimSize, proj.extTrimMaterial].filter(Boolean).join(" · ")}</div>}
+                <div style={{ fontSize: 22, fontWeight: 800, color: GREEN }}>{matSum.eLF} LF</div>
+              </div>}
+              {matSum.stoolTotal > 0 && <div style={{ padding: 12, background: GRAY_BG, borderRadius: 8 }}>
+                <div style={{ fontWeight: 700, color: NAVY, marginBottom: 2 }}>Stools</div>
+                {proj.stoolSize && <div style={{ fontSize: 10, color: "#666", marginBottom: 4 }}>{proj.stoolSize}</div>}
+                <div style={{ fontSize: 22, fontWeight: 800, color: GREEN }}>{matSum.stoolTotal}</div>
+                <div style={{ fontSize: 11, color: "#666", marginTop: 2 }}>pieces</div>
+              </div>}
+              {matSum.metalRolls > 0 && <div style={{ padding: 12, background: GRAY_BG, borderRadius: 8 }}>
+                <div style={{ fontWeight: 700, color: NAVY, marginBottom: 2 }}>Metal Wrap</div>
+                <div style={{ fontSize: 10, color: "#666", marginBottom: 4 }}>6" strips · 50'×100' rolls</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: GREEN }}>{matSum.metalSqFt} sq ft</div>
+                <div style={{ fontSize: 11, color: "#666", marginTop: 2 }}>{matSum.metalRolls < 1 ? `< 1 roll (${matSum.metalRolls} of roll)` : `${matSum.metalRolls} roll${matSum.metalRolls > 1 ? "s" : ""}`}</div>
+              </div>}
+              {matSum.caulkTotal > 0 && <div style={{ padding: 12, background: GRAY_BG, borderRadius: 8 }}>
+                <div style={{ fontWeight: 700, color: NAVY, marginBottom: 2 }}>Caulking</div>
+                <div style={{ fontSize: 11, color: GREEN, fontWeight: 700, marginBottom: 4 }}>{matSum.caulkTotal * 2} tubes total</div>
+                <div style={{ fontSize: 11, color: "#444" }}>Int: {matSum.caulkTotal} × {proj.caulkIntColor}</div>
+                <div style={{ fontSize: 11, color: "#444" }}>Ext: {matSum.caulkTotal} × {proj.caulkExtColor}</div>
+              </div>}
             </div>}
           </div>
         )}
@@ -793,17 +897,17 @@ export default function App() {
                 )}
                 <label style={chk}><input type="checkbox" checked={d.extTrim} onChange={e => ud(d.id, "extTrim", e.target.checked)} style={{ width: 20, height: 20, accentColor: ORANGE }} />Exterior Trim</label>
               </div>
-              {d.extTrim && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 2fr", gap: 8, marginTop: 6 }}>
+              {d.extTrim && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginTop: 6 }}>
                 <div><label style={lbl}>Ext Trim Size</label><select style={sel} value={d.extTrimSize} onChange={e => ud(d.id, "extTrimSize", e.target.value)}>{EXT_TRIM_SIZES.map(s => <option key={s} value={s}>{s || "-- Select --"}</option>)}</select></div>
                 <div><label style={lbl}>Ext Trim Texture</label><select style={sel} value={d.extTrimTexture} onChange={e => ud(d.id, "extTrimTexture", e.target.value)}>{EXT_TRIM_TEXTURES.map(t => <option key={t} value={t}>{t || "-- Select --"}</option>)}</select></div>
-                <div />
+                <div><label style={lbl}>Trim Material</label><select style={sel} value={d.extTrimMaterial || ""} onChange={e => ud(d.id, "extTrimMaterial", e.target.value)}>{EXT_TRIM_MATERIALS.map(m => <option key={m} value={m}>{m || "-- Select --"}</option>)}</select></div>
               </div>}
               {dMats && (d.jamb || d.casing || d.extTrim) && <div style={{ marginTop: 8, padding: "8px 10px", background: `${GREEN}08`, border: `1px solid ${GREEN}30`, borderRadius: 8, fontSize: 11 }}>
-                <div style={{ fontWeight: 700, color: GREEN, marginBottom: 4, fontSize: 12 }}>"" Door Material Calc ({dMats.width}" {"x"} {dMats.height}" {"x"} {d.qty})</div>
+                <div style={{ fontWeight: 700, color: GREEN, marginBottom: 4, fontSize: 12 }}>Door Material Calc ({dMats.width}" x {dMats.height}" x {d.qty})</div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-                  {d.jamb && <div><strong>Jamb:</strong> {dMats.jambLF} LF {"|"} {dMats.jambPcs} pcs<br /><span style={{ color: "#666" }}>{dMats.jambDetail}</span></div>}
-                  {d.casing && <div><strong>Casing:</strong> {dMats.casingLF} LF {"|"} {dMats.casingPcs} pcs<br /><span style={{ color: "#666" }}>{dMats.casingDetail}</span></div>}
-                  {d.extTrim && <div><strong>Ext Trim:</strong> {dMats.extLF} LF{d.extTrimSize ? ` (${d.extTrimSize}${d.extTrimTexture ? ` ${d.extTrimTexture}` : ""})` : ""}<br /><span style={{ color: "#666" }}>{dMats.extDetail}</span>{dMats.sideliteExtra && <><br /><span style={{ color: ORANGE }}>{dMats.sideliteExtra}</span></>}</div>}
+                  {d.jamb && <div><strong>Jamb{proj.jambSpecies ? ` (${proj.jambSpecies})` : ""}:</strong> {dMats.jambLF} LF | {dMats.jambPcs} pcs<br /><span style={{ color: "#666" }}>{dMats.jambDetail}</span></div>}
+                  {d.casing && <div><strong>Casing{proj.casingSize ? ` ${proj.casingSize}` : ""} (both sides):</strong> {dMats.casingLF} LF | {dMats.casingPcs} pcs<br /><span style={{ color: "#666" }}>{dMats.casingDetail}</span></div>}
+                  {d.extTrim && <div><strong>Ext Trim{d.extTrimSize ? ` ${d.extTrimSize}` : ""}{d.extTrimMaterial ? ` ${d.extTrimMaterial}` : ""}:</strong> {dMats.extLF} LF<br /><span style={{ color: "#666" }}>{dMats.extDetail}</span>{dMats.sideliteExtra && <><br /><span style={{ color: ORANGE }}>{dMats.sideliteExtra}</span></>}</div>}
                 </div>
               </div>}
               <div style={{ marginTop: 8 }}><label style={lbl}>Notes</label><textarea style={{ ...inp, minHeight: 50 }} value={d.notes} onChange={e => ud(d.id, "notes", e.target.value)} placeholder="Size, style, sidelites, transom..." /></div>
