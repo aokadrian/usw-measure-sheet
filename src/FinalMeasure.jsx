@@ -78,6 +78,7 @@ const mkMeasure = (item, idx, prefix, proj = {}) => ({
   installNotes: "",
   materialConfirmed: false,
   verified: false,
+  expanded: true,
 });
 
 const mkProjMeasure = () => ({
@@ -332,7 +333,13 @@ export default function App() {
         </div>
 
         {/* Opening Cards */}
-        <div style={sec}>Openings ({totalOpenings})</div>
+        <div style={{ ...sec, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span>Openings ({totalOpenings})</span>
+          <div style={{ display: "flex", gap: 6 }}>
+            <button onClick={() => setMeasures(ms => ms.map(m => ({ ...m, expanded: true })))} style={{ fontSize: 11, fontWeight: 600, color: NAVY, background: "#fff", border: `1px solid ${GRAY_BORDER}`, borderRadius: 6, padding: "3px 10px", cursor: "pointer" }}>Expand All</button>
+            <button onClick={() => setMeasures(ms => ms.map(m => ({ ...m, expanded: false })))} style={{ fontSize: 11, fontWeight: 600, color: NAVY, background: "#fff", border: `1px solid ${GRAY_BORDER}`, borderRadius: 6, padding: "3px 10px", cursor: "pointer" }}>Collapse All</button>
+          </div>
+        </div>
         {measures.map((m, idx) => {
           const isWin = m.key.startsWith("W");
           const wMatch = m.verifiedW && m.origW && m.verifiedW === m.origW;
@@ -340,7 +347,7 @@ export default function App() {
           const dimMismatch = (m.verifiedW && m.origW && m.verifiedW !== m.origW) || (m.verifiedH && m.origH && m.verifiedH !== m.origH);
           return (
             <div key={m.key} style={{ background: "#fff", borderRadius: 10, marginBottom: 6, boxShadow: "0 1px 3px rgba(0,0,0,0.08)", overflow: "hidden", border: m.verified ? `2px solid ${GREEN}40` : dimMismatch ? `2px solid ${RED}40` : `2px solid transparent` }}>
-              <div style={{ padding: "10px 12px", background: m.verified ? `${GREEN}08` : "transparent" }}>
+              <div onClick={() => um(m.key, "expanded", !m.expanded)} style={{ padding: "10px 12px", background: m.verified ? `${GREEN}08` : "transparent", cursor: "pointer" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <div style={{ fontSize: 14, fontWeight: 800, color: isWin ? NAVY : ORANGE, width: 28, textAlign: "center" }}>{m.key}</div>
                   <div style={{ flex: 1 }}>
@@ -349,6 +356,7 @@ export default function App() {
                   </div>
                   {m.verified && <div style={{ fontSize: 11, fontWeight: 700, color: GREEN, background: `${GREEN}15`, padding: "3px 10px", borderRadius: 12 }}>✓ Verified</div>}
                   {dimMismatch && <div style={{ fontSize: 11, fontWeight: 700, color: RED, background: `${RED}15`, padding: "3px 10px", borderRadius: 12 }}>! Mismatch</div>}
+                  <span style={{ fontSize: 13, color: NAVY, marginLeft: 2 }}>{m.expanded ? "∨" : "›"}</span>
                 </div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 5, paddingLeft: 36 }}>
                   {m.glass && <span style={{ fontSize: 9, background: `${NAVY}10`, color: NAVY, padding: "2px 6px", borderRadius: 8, fontWeight: 600 }}>{m.glass}</span>}
@@ -364,7 +372,7 @@ export default function App() {
                   {m.doorShape && m.doorShape !== "Square Top" && <span style={{ fontSize: 9, background: `${RED}18`, color: "#b91c1c", padding: "2px 6px", borderRadius: 8, fontWeight: 700 }}>SHAPE: {m.doorShape}</span>}
                 </div>
               </div>
-              <div style={{ padding: "0 12px 12px", borderTop: `1px solid ${GRAY_BORDER}` }}>
+              {m.expanded && <div style={{ padding: "0 12px 12px", borderTop: `1px solid ${GRAY_BORDER}` }}>
                 {/* Dimensions */}
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginTop: 10 }}>
                   <div><label style={lbl}>Verified Width</label><input style={{ ...inp, borderColor: m.verifiedW ? (wMatch ? GREEN : RED) : GRAY_BORDER, borderWidth: m.verifiedW ? 2 : 1 }} value={m.verifiedW} onChange={e => um(m.key, "verifiedW", e.target.value)} placeholder={m.origW || "W"} /></div>
@@ -415,7 +423,7 @@ export default function App() {
                     {m.verified ? "✓ Verified" : "Mark Verified"}
                   </button>
                 </div>
-              </div>
+              </div>}
             </div>
           );
         })}

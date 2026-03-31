@@ -258,7 +258,7 @@ function calcDoorMaterials(d) {
 
 function getPcs(t) { return WINDOW_TYPES.find(x => x.code === t)?.pcs || 1; }
 
-const mkWin = () => ({ id: Date.now() + Math.random(), location: "", qty: 1, type: "DH", config: "", netW: "", netH: "", roughW: "", roughH: "", gridType: "None", gridPattern: "", gridLocation: "Both", litesW: "", litesH: "", tempered: "No", glass: "DP LoE2 Ar", glassTexture: "Clear", screen: "Full", casing: false, jamb: false, stools: false, stoolSize: "", stoolSizeCustom: "", wrapTrim: false, extTrim: false, extTrimSize: "", extTrimTexture: "", winWrap: "", metalRoll: "", metalColor: "", trimOverride: false, oJambSpecies: "", oJambFinish: "", oJambColor: "", oJambStainColor: "", oJambSize: "", oCasingSpecies: "", oCasingFinish: "", oCasingColor: "", oCasingStainColor: "", oStoolSize: "", shapeCode: "", shapeNotes: "", baySeatDepth: "", bayProjection: "", bayPanels: "", bowPanelCount: "4", notes: "", expanded: true });
+const mkWin = () => ({ id: Date.now() + Math.random(), location: "", qty: 1, type: "DH", config: "", netW: "", netH: "", roughW: "", roughH: "", gridType: "None", gridPattern: "", gridLocation: "Both", litesW: "", litesH: "", tempered: "No", glass: "DP LoE2 Ar", glassTexture: "Clear", screen: "Full", casing: false, jamb: false, stools: false, stoolSize: "", stoolSizeCustom: "", stoolNotes: "", wrapTrim: false, extTrim: false, extTrimSize: "", extTrimTexture: "", winWrap: "", metalRoll: "", metalColor: "", trimOverride: false, oJambSpecies: "", oJambFinish: "", oJambColor: "", oJambStainColor: "", oJambSize: "", oCasingSpecies: "", oCasingFinish: "", oCasingColor: "", oCasingStainColor: "", oStoolSize: "", shapeCode: "", shapeNotes: "", baySeatDepth: "", bayProjection: "", bayPanels: "", bowPanelCount: "4", notes: "", expanded: true });
 const mkDoor = () => ({ id: Date.now() + Math.random(), type: "", location: "", qty: 1, handing: "", operation: "", netW: "", netH: "", roughW: "", roughH: "", glassConfig: "", glass: "DP LoE2 Ar", glassTexture: "Clear", hardwareColor: "", hardwareColorCustom: "", hardwareType: "", hardwareTypeCustom: "", jambThickness: "", sidelites: "None", sideliteW: "", sideliteGlassTexture: "Clear", transom: false, transomH: "", threshold: "", doorScreen: "", doorShape: "Square Top", doorShapeNotes: "", jamb: false, casing: false, wrapTrim: false, extTrim: false, extTrimSize: "", extTrimTexture: "", doorWrap: "", trimOverride: false, oJambSpecies: "", oJambFinish: "", oJambColor: "", oCasingSpecies: "", oCasingFinish: "", oCasingColor: "", notes: "", expanded: true });
 const mkProj = () => ({ customer: "", address: "", date: new Date().toISOString().split("T")[0], installType: "Replacement", brand: "", series: "", supplier: "GENERIC", brickmould: "", jChannel: "", wallThick: "2x4", winIntColor: "White", winExtColor: "White", doorIntColor: "White", doorExtColor: "White", specialColor: "", jambSize: "5/8x4", jambSizeCustom: "", stoolSize: "3/4x4", stoolSizeCustom: "", stoolColor: "", extTrimBrand: "", jambSpecies: "", jambFinish: "", jambColor: "", jambStainColor: "", casingSpecies: "", casingFinish: "", casingColor: "", casingStainColor: "", zapierUrl: "" });
 
@@ -817,7 +817,7 @@ export default function App() {
                     <div><label style={lbl}>Stool Size</label><select style={sel} value={w.oStoolSize || ""} onChange={e => uw(w.id, "oStoolSize", e.target.value)}><option value="">Use default ({proj.stoolSize})</option>{STOOL_SIZES.map(sz => <option key={sz} value={sz}>{sz}</option>)}</select></div>
                     {(w.oStoolSize === "Custom" || (w.oStoolSize === "" && proj.stoolSize === "Custom")) && <div><label style={lbl}>Custom Size</label><input style={inp} value={w.stoolSizeCustom} onChange={e => uw(w.id, "stoolSizeCustom", e.target.value)} placeholder='1"x8"' /></div>}
                     <div><label style={lbl}>Stool Length</label><input style={{ ...inp, background: stoolLen ? `${GREEN}08` : "#fff", fontWeight: 700 }} value={stoolLen ? `${stoolLen}"` : ""} readOnly placeholder="auto-calc" /></div>
-                    <div><label style={lbl}>Notes</label><input style={inp} value={w.stoolSizeCustom} onChange={e => uw(w.id, "stoolSizeCustom", e.target.value)} placeholder="Color, species, finish..." /></div>
+                    <div><label style={lbl}>Notes</label><input style={inp} value={w.stoolNotes} onChange={e => uw(w.id, "stoolNotes", e.target.value)} placeholder="Color, species, finish..." /></div>
                   </div>
                 </div>
               ); })()}
@@ -889,6 +889,14 @@ export default function App() {
               <div style={{ fontSize: 14, fontWeight: 800, color: ORANGE, width: 24, textAlign: "center" }}>D{idx + 1}</div>
               <DoorIcon type={d.type} sidelites={d.sidelites} transom={d.transom} glassConfig={d.glassConfig} />
               <div style={{ flex: 1 }}><div style={{ fontSize: 13, fontWeight: 600, color: NAVY }}>{d.location || d.type || "--"}</div><div style={{ fontSize: 11, color: "#666" }}>{d.type}{d.handing ? ` | ${d.handing}` : ""}{d.netW && d.netH ? ` | ${d.netW} x ${d.netH}` : ""}{d.glassConfig ? ` | ${d.glassConfig}` : ""}{d.sidelites !== "None" ? ` | SL:${d.sidelites}` : ""}{d.transom ? " | Transom" : ""}</div></div>
+              {!d.expanded && (d.jamb || d.casing || d.extTrim || d.wrapTrim) && (
+                <div style={{ display: "flex", gap: 3, flexWrap: "wrap", maxWidth: 100 }}>
+                  {d.jamb && <span style={{ fontSize: 9, background: `${NAVY}15`, color: NAVY, padding: "2px 5px", borderRadius: 10, fontWeight: 700 }}>JAMB</span>}
+                  {d.casing && <span style={{ fontSize: 9, background: `${GREEN}20`, color: GREEN, padding: "2px 5px", borderRadius: 10, fontWeight: 700 }}>CSG</span>}
+                  {d.extTrim && <span style={{ fontSize: 9, background: `${ORANGE}20`, color: ORANGE, padding: "2px 5px", borderRadius: 10, fontWeight: 700 }}>EXT</span>}
+                  {d.wrapTrim && <span style={{ fontSize: 9, background: `${NAVY}10`, color: NAVY, padding: "2px 5px", borderRadius: 10, fontWeight: 700 }}>WRAP</span>}
+                </div>
+              )}
               <span style={{ fontSize: 14, color: NAVY }}>{d.expanded ? "v" : ">"}</span>
             </div>
             {d.expanded && <div style={{ padding: "0 12px 12px", borderTop: `1px solid ${GRAY_BORDER}` }}>
@@ -997,6 +1005,16 @@ export default function App() {
           </div>
         ); })}
         <button onClick={addDoor} style={{ ...bS, width: "100%", marginTop: 6, padding: "12px", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 10 }}>+ Add Door</button>
+        {(parseFloat(doorMatSum.jLF) > 0 || parseFloat(doorMatSum.cLF) > 0 || parseFloat(doorMatSum.eLF) > 0) && (
+          <div style={{ background: "#fff", borderRadius: 10, padding: 14, marginTop: 10, boxShadow: "0 1px 3px rgba(0,0,0,0.08)", border: `2px solid ${GREEN}20` }}>
+            <div style={{ ...sec, color: GREEN, borderColor: GREEN }}>Door Material Summary</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, fontSize: 13 }}>
+              {parseFloat(doorMatSum.jLF) > 0 && <div style={{ padding: 12, background: GRAY_BG, borderRadius: 8 }}><div style={{ fontWeight: 700, color: NAVY, marginBottom: 4 }}>Door Jamb Ext</div><div style={{ fontSize: 22, fontWeight: 800, color: GREEN }}>{doorMatSum.jLF} LF</div><div style={{ fontSize: 11, color: "#666", marginTop: 2 }}>{doorMatSum.jP} stock pcs</div></div>}
+              {parseFloat(doorMatSum.cLF) > 0 && <div style={{ padding: 12, background: GRAY_BG, borderRadius: 8 }}><div style={{ fontWeight: 700, color: NAVY, marginBottom: 4 }}>Int Casing</div><div style={{ fontSize: 22, fontWeight: 800, color: GREEN }}>{doorMatSum.cLF} LF</div><div style={{ fontSize: 11, color: "#666", marginTop: 2 }}>{doorMatSum.cP} stock pcs</div></div>}
+              {parseFloat(doorMatSum.eLF) > 0 && <div style={{ padding: 12, background: GRAY_BG, borderRadius: 8 }}><div style={{ fontWeight: 700, color: NAVY, marginBottom: 4 }}>Ext Trim</div><div style={{ fontSize: 22, fontWeight: 800, color: GREEN }}>{doorMatSum.eLF} LF</div>{doorMatSum.slE && <div style={{ fontSize: 10, color: ORANGE, marginTop: 2 }}>{doorMatSum.slE}</div>}</div>}
+            </div>
+          </div>
+        )}
       </div>
       <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "#fff", borderTop: `2px solid ${NAVY}`, padding: "8px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", zIndex: 50, boxShadow: "0 -2px 12px rgba(0,0,0,0.1)" }}>
         <div style={{ display: "flex", gap: 14 }}>
