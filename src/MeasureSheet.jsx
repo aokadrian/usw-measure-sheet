@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 
 const ORANGE = "#F7941D";
 const NAVY = "#003B5C";
@@ -409,6 +410,7 @@ export default function App() {
   const [matOpen, setMatOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [zapStatus, setZapStatus] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => { (async () => { try { const r = await window.storage.list("uws-job:"); if (r?.keys) setJobList(r.keys); } catch (e) {} })(); }, []);
   useEffect(() => { (async () => { try { const r = await window.storage.get("uws-zapier-url"); if (r?.value) setProj(p => ({ ...p, zapierUrl: r.value })); } catch (e) {} })(); }, []);
@@ -427,11 +429,14 @@ export default function App() {
   const rmDoor = id => { setDoors(ds => ds.filter(d => d.id !== id)); setSaved(false); };
   const dupDoor = id => { setDoors(ds => { const i = ds.findIndex(d => d.id === id); if (i === -1) return ds; const c = { ...ds[i], id: Date.now() + Math.random(), expanded: true }; const n = [...ds]; n.splice(i + 1, 0, c); return n; }); setSaved(false); };
 
-  const saveJob = async () => { const safeName = (proj.customer || "unnamed").replace(/[\s\/\\'"]+/g, "_"); const k = `uws-job:${safeName}-${proj.date}`; try { await window.storage.set(k, JSON.stringify({ proj, wins, doors })); setSaved(true); const r = await window.storage.list("uws-job:"); if (r?.keys) setJobList(r.keys); } catch (e) { alert("Save failed: " + e.message); } };
+  const saveJob = async () => { const safeName = (proj.customer || "unnamed").replace(/[\s\/\\'"]+/g, "_"); const k = `uws-job:${safeName}-${proj.date}`; try { await window.storage.set(k, JSON.stringify({ proj, wins, doors })); setSaved(true); setTimeout(() => setSaved(false), 3000); const r = await window.storage.list("uws-job:"); if (r?.keys) setJobList(r.keys); } catch (e) { alert("Save failed: " + e.message); } };
   const loadJob = async k => { try { const r = await window.storage.get(k); if (r?.value) { const d = JSON.parse(r.value); setProj(p => ({ ...mkProj(), ...d.proj })); setWins((d.wins || []).map(w => ({ ...mkWin(), ...w, expanded: false }))); setDoors((d.doors || []).map(x => ({ ...mkDoor(), ...x, expanded: false }))); setShowJobs(false); } } catch (e) { alert("Load failed"); } };
   const delJob = async k => { try { await window.storage.delete(k); setJobList(j => j.filter(x => x !== k)); } catch (e) {} };
   const newJob = () => { setProj(p => ({ ...mkProj(), zapierUrl: p.zapierUrl })); setWins([mkWin()]); setDoors([]); setSaved(false); setView("form"); };
   const saveZapierUrl = async (url) => { try { await window.storage.set("uws-zapier-url", url); } catch (e) {} };
+
+  const moveWin = (id, dir) => { setWins(ws => { const i = ws.findIndex(w => w.id === id); if (i === -1) return ws; const j = i + dir; if (j < 0 || j >= ws.length) return ws; const n = [...ws]; [n[i], n[j]] = [n[j], n[i]]; return n; }); setSaved(false); };
+  const moveDoor = (id, dir) => { setDoors(ds => { const i = ds.findIndex(d => d.id === id); if (i === -1) return ds; const j = i + dir; if (j < 0 || j >= ds.length) return ds; const n = [...ds]; [n[i], n[j]] = [n[j], n[i]]; return n; }); setSaved(false); };
 
   const sendToZapier = async () => {
     if (!proj.zapierUrl) { setZapStatus("No webhook URL configured"); return; }
@@ -595,10 +600,11 @@ export default function App() {
           <button onClick={() => setSettingsOpen(!settingsOpen)} style={{ ...bS, padding: "5px 10px", fontSize: 11, color: "#fff", borderColor: "rgba(255,255,255,0.4)" }}> Settings</button>
           <button onClick={() => setShowJobs(!showJobs)} style={{ ...bS, padding: "5px 10px", fontSize: 11, color: "#fff", borderColor: "rgba(255,255,255,0.4)" }}>Jobs</button>
           <button onClick={newJob} style={{ ...bS, padding: "5px 10px", fontSize: 11, color: "#fff", borderColor: "rgba(255,255,255,0.4)" }}>+ New</button>
+          <button onClick={() => navigate("/final-measure")} style={{ ...bP, padding: "5px 10px", fontSize: 11 }}>Final Measure</button>
         </div>
       </div>
       {settingsOpen && <div style={{ background: "#fff", border: `1px solid ${GRAY_BORDER}`, margin: "0 12px", borderRadius: "0 0 8px 8px", boxShadow: "0 4px 12px rgba(0,0,0,0.1)", padding: 14 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: NAVY, marginBottom: 10 }}>"Settings" Settings "--" Zapier / JobNimbus</div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: NAVY, marginBottom: 10 }}>Settings — Zapier / JobNimbus</div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <input style={{ ...inp, flex: 1, fontSize: 12, padding: "8px 10px" }} value={proj.zapierUrl} onChange={e => up("zapierUrl", e.target.value)} placeholder="https://hooks.zapier.com/hooks/catch/..." />
           <button onClick={() => saveZapierUrl(proj.zapierUrl)} style={{ ...bS, padding: "8px 14px", fontSize: 11, whiteSpace: "nowrap" }}>Save URL</button>
@@ -668,6 +674,15 @@ export default function App() {
                 <div style={{ fontSize: 13, fontWeight: 600, color: NAVY }}>{w.location || "--"}</div>
                 <div style={{ fontSize: 11, color: "#666" }}>{WINDOW_TYPES.find(t => t.code === w.type)?.name}{w.type === "SHAPE" && w.shapeCode ? ` (${SHAPE_PRESETS.find(sp => sp.code === w.shapeCode)?.name || w.shapeCode})` : ""}{w.config ? ` | ${w.config}` : ""}{w.netW && w.netH ? ` | ${w.netW} x ${w.netH}` : ""}</div>
               </div>
+              {!w.expanded && (w.casing || w.jamb || w.stools || w.extTrim || w.wrapTrim) && (
+                <div style={{ display: "flex", gap: 3, flexWrap: "wrap", maxWidth: 100 }}>
+                  {w.jamb && <span style={{ fontSize: 9, background: `${NAVY}15`, color: NAVY, padding: "2px 5px", borderRadius: 10, fontWeight: 700 }}>JAMB</span>}
+                  {w.casing && <span style={{ fontSize: 9, background: `${GREEN}20`, color: GREEN, padding: "2px 5px", borderRadius: 10, fontWeight: 700 }}>CSG</span>}
+                  {w.stools && <span style={{ fontSize: 9, background: `${ORANGE}20`, color: ORANGE, padding: "2px 5px", borderRadius: 10, fontWeight: 700 }}>STLS</span>}
+                  {w.extTrim && <span style={{ fontSize: 9, background: `${ORANGE}20`, color: ORANGE, padding: "2px 5px", borderRadius: 10, fontWeight: 700 }}>EXT</span>}
+                  {w.wrapTrim && <span style={{ fontSize: 9, background: `${NAVY}10`, color: NAVY, padding: "2px 5px", borderRadius: 10, fontWeight: 700 }}>WRAP</span>}
+                </div>
+              )}
               <div style={{ textAlign: "right" }}><div style={{ fontSize: 12, fontWeight: 600, color: NAVY }}>Qty: {w.qty}</div><div style={{ fontSize: 11, color: ORANGE, fontWeight: 600 }}>{(parseInt(w.qty) || 0) * getPcs(w.type)} pcs</div></div>
               <span style={{ fontSize: 14, color: NAVY, marginLeft: 2 }}>{w.expanded ? "v" : ">"}</span>
             </div>
@@ -726,6 +741,8 @@ export default function App() {
                 </div>
               </div>}
               <div style={{ display: "flex", gap: 6, marginTop: 10, justifyContent: "flex-end" }}>
+                {idx > 0 && <button onClick={e => { e.stopPropagation(); moveWin(w.id, -1); }} style={{ ...bS, padding: "5px 8px", fontSize: 14 }}>↑</button>}
+                {idx < wins.length - 1 && <button onClick={e => { e.stopPropagation(); moveWin(w.id, 1); }} style={{ ...bS, padding: "5px 8px", fontSize: 14 }}>↓</button>}
                 <button onClick={() => dupWin(w.id)} style={{ ...bS, padding: "5px 12px", fontSize: 11 }}>Duplicate</button>
                 {wins.length > 1 && <button onClick={() => rmWin(w.id)} style={{ ...bS, padding: "5px 12px", fontSize: 11, color: "#ef4444", borderColor: "#ef4444" }}>Remove</button>}
               </div>
@@ -744,7 +761,7 @@ export default function App() {
           </div>
         )}
 
-        <div style={{ ...sec, marginTop: 16, marginBottom: 6, display: "flex", justifyContent: "space-between", alignItems: "center" }}><span>Doors ({doors.length})</span></div>
+        <div style={{ ...sec, marginTop: 16, marginBottom: 6, display: "flex", justifyContent: "space-between", alignItems: "center" }}><span>Doors ({doors.length})</span>{doors.length > 0 && <div style={{ display: "flex", gap: 12, fontSize: 13, fontWeight: 600 }}><span style={{ color: "#666" }}>QTY: {doors.reduce((s, d) => s + (parseInt(d.qty) || 0), 0)}</span></div>}</div>
         {doors.map((d, idx) => { const dMats = calcDoorMaterials(d); return (
           <div key={d.id} style={{ background: "#fff", borderRadius: 10, marginBottom: 6, boxShadow: "0 1px 3px rgba(0,0,0,0.08)", overflow: "hidden", border: d.expanded ? `2px solid ${NAVY}22` : "2px solid transparent" }}>
             <div onClick={() => ud(d.id, "expanded", !d.expanded)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 12px", cursor: "pointer", background: d.expanded ? `${NAVY}08` : "transparent" }}>
@@ -799,7 +816,7 @@ export default function App() {
                 <div />
               </div>}
               {dMats && (d.jamb || d.casing || d.extTrim) && <div style={{ marginTop: 8, padding: "8px 10px", background: `${GREEN}08`, border: `1px solid ${GREEN}30`, borderRadius: 8, fontSize: 11 }}>
-                <div style={{ fontWeight: 700, color: GREEN, marginBottom: 4, fontSize: 12 }}>"" Door Material Calc ({dMats.width}" {"x"} {dMats.height}" {"x"} {d.qty})</div>
+                <div style={{ fontWeight: 700, color: GREEN, marginBottom: 4, fontSize: 12 }}>Door Material Calc ({dMats.width}" x {dMats.height}" x {d.qty})</div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
                   {d.jamb && <div><strong>Jamb:</strong> {dMats.jambLF} LF {"|"} {dMats.jambPcs} pcs<br /><span style={{ color: "#666" }}>{dMats.jambDetail}</span></div>}
                   {d.casing && <div><strong>Casing:</strong> {dMats.casingLF} LF {"|"} {dMats.casingPcs} pcs<br /><span style={{ color: "#666" }}>{dMats.casingDetail}</span></div>}
@@ -808,6 +825,8 @@ export default function App() {
               </div>}
               <div style={{ marginTop: 8 }}><label style={lbl}>Notes</label><textarea style={{ ...inp, minHeight: 50 }} value={d.notes} onChange={e => ud(d.id, "notes", e.target.value)} placeholder="Size, style, sidelites, transom..." /></div>
               <div style={{ display: "flex", gap: 6, marginTop: 8, justifyContent: "flex-end" }}>
+                {idx > 0 && <button onClick={e => { e.stopPropagation(); moveDoor(d.id, -1); }} style={{ ...bS, padding: "5px 8px", fontSize: 14 }}>↑</button>}
+                {idx < doors.length - 1 && <button onClick={e => { e.stopPropagation(); moveDoor(d.id, 1); }} style={{ ...bS, padding: "5px 8px", fontSize: 14 }}>↓</button>}
                 <button onClick={() => dupDoor(d.id)} style={{ ...bS, padding: "5px 12px", fontSize: 11 }}>Duplicate</button>
                 <button onClick={() => rmDoor(d.id)} style={{ ...bS, padding: "5px 12px", fontSize: 11, color: "#ef4444", borderColor: "#ef4444" }}>Remove</button>
               </div>

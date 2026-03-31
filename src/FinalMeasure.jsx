@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 
 const ORANGE = "#F7941D";
 const NAVY = "#003B5C";
@@ -56,6 +57,7 @@ export default function App() {
   const [jobData, setJobData] = useState(null);
   const [measures, setMeasures] = useState([]);
   const [projMeasure, setProjMeasure] = useState(mkProjMeasure());
+  const navigate = useNavigate();
   const [view, setView] = useState("select");
   const [saved, setSaved] = useState(false);
 
@@ -193,8 +195,9 @@ export default function App() {
   // ====== JOB SELECT ======
   if (view === "select") return (
     <div style={{ fontFamily: "'Segoe UI',system-ui,sans-serif", background: GRAY_BG, minHeight: "100vh" }}>
-      <div style={{ background: NAVY, padding: "16px 20px" }}>
+      <div style={{ background: NAVY, padding: "12px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>UWS <span style={{ color: ORANGE }}>FINAL MEASURE</span></div>
+        <button onClick={() => navigate("/")} style={{ background: "none", color: "rgba(255,255,255,0.75)", border: "1px solid rgba(255,255,255,0.35)", padding: "5px 12px", borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: "pointer" }}>← Quote Sheet</button>
       </div>
       <div style={{ padding: "24px 16px", maxWidth: 600, margin: "0 auto" }}>
         <div style={sec}>Select Job to Measure</div>
@@ -221,6 +224,7 @@ export default function App() {
         </div>
         <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
           <div style={{ fontSize: 11, color: allVerified ? GREEN : "#fff", fontWeight: 700, marginRight: 8 }}>{verifiedCount}/{totalOpenings} Verified</div>
+          <button onClick={() => navigate("/")} style={{ ...bS, padding: "5px 10px", fontSize: 11, color: "#fff", borderColor: "rgba(255,255,255,0.4)" }}>← Sheet</button>
           <button onClick={() => setView("select")} style={{ ...bS, padding: "5px 10px", fontSize: 11, color: "#fff", borderColor: "rgba(255,255,255,0.4)" }}>Jobs</button>
         </div>
       </div>
