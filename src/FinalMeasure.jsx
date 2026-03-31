@@ -11,12 +11,52 @@ const RED = "#ef4444";
 const FRAME_CONDITIONS = ["Good", "Fair", "Poor", "Replace"];
 const ACCESS_TYPES = ["", "Ground Level", "Ladder Required", "Scaffolding", "Interior Only", "Restricted"];
 
-const mkMeasure = (item, idx, prefix) => ({
+const mkMeasure = (item, idx, prefix, proj = {}) => ({
   key: `${prefix}${idx}`,
   location: item.location || "",
   type: item.type || "",
+  qty: item.qty || 1,
   origW: item.netW || "",
   origH: item.netH || "",
+  // Quote specs (for field reference)
+  glass: item.glass || "",
+  glassTexture: item.glassTexture || "Clear",
+  gridType: item.gridType || "None",
+  gridPattern: item.gridPattern || "",
+  litesW: item.litesW || "",
+  litesH: item.litesH || "",
+  tempered: item.tempered || "No",
+  screen: item.screen || "",
+  glassConfig: item.glassConfig || "",
+  hardwareColor: item.hardwareColor === "Custom" ? (item.hardwareColorCustom || "Custom") : (item.hardwareColor || ""),
+  hardwareType: item.hardwareType === "Custom" ? (item.hardwareTypeCustom || "Custom") : (item.hardwareType || ""),
+  sidelites: item.sidelites || "None",
+  sideliteW: item.sideliteW || "",
+  sideliteGlassTexture: item.sideliteGlassTexture || "",
+  transom: item.transom || false,
+  transomH: item.transomH || "",
+  doorShape: item.doorShape || "Square Top",
+  // Material specs (per-window override → project default)
+  jambSize: item.oJambSize || (proj.jambSize === "Custom" ? proj.jambSizeCustom : proj.jambSize) || "",
+  jambSpecies: item.oJambSpecies || proj.jambSpecies || "",
+  jambFinish: item.oJambFinish || proj.jambFinish || "",
+  jambColor: item.oJambColor || (proj.jambFinish === "Stained" ? proj.jambStainColor : proj.jambColor) || "",
+  casingSpecies: item.oCasingSpecies || proj.casingSpecies || "",
+  casingFinish: item.oCasingFinish || proj.casingFinish || "",
+  casingColor: item.oCasingColor || (proj.casingFinish === "Stained" ? proj.casingStainColor : proj.casingColor) || "",
+  hasCasing: !!(item.casing),
+  hasJamb: !!(item.jamb),
+  hasExtTrim: !!(item.extTrim),
+  hasWrap: !!(item.wrapTrim),
+  stoolIncluded: !!(item.stools),
+  stoolSize: item.oStoolSize || (proj.stoolSize === "Custom" ? proj.stoolSizeCustom : proj.stoolSize) || "",
+  stoolColor: proj.stoolColor || "",
+  metalRoll: item.metalRoll || "",
+  metalColor: item.metalColor || "",
+  extTrimSize: item.extTrimSize || "",
+  extTrimTexture: item.extTrimTexture || "",
+  extTrimBrand: proj.extTrimBrand || "",
+  // Field measure fields
   verifiedW: "",
   verifiedH: "",
   roughW: "",
@@ -36,6 +76,7 @@ const mkMeasure = (item, idx, prefix) => ({
   shimDepth: "",
   photoRef: "",
   installNotes: "",
+  materialConfirmed: false,
   verified: false,
 });
 
@@ -89,8 +130,8 @@ export default function App() {
           }
         } catch (e) {}
         // Build fresh measure entries from job data
-        const winMs = (d.wins || []).map((w, i) => mkMeasure(w, i + 1, "W"));
-        const doorMs = (d.doors || []).map((dr, i) => mkMeasure(dr, i + 1, "D"));
+        const winMs = (d.wins || []).map((w, i) => mkMeasure(w, i + 1, "W", d.proj));
+        const doorMs = (d.doors || []).map((dr, i) => mkMeasure(dr, i + 1, "D", d.proj));
         setMeasures([...winMs, ...doorMs]);
         setProjMeasure(mkProjMeasure());
         setView("form");
@@ -165,7 +206,7 @@ export default function App() {
               <tr key={m.key} style={{ borderBottom: "1px solid #ddd", background: m.verified ? `${GREEN}08` : i % 2 === 0 ? "#fff" : "#f9fafb" }}>
                 <td style={{ padding: "4px 3px", fontWeight: 700, color: m.key.startsWith("D") ? ORANGE : NAVY }}>{m.key}</td>
                 <td style={{ padding: "4px 3px" }}>{m.location}</td>
-                <td style={{ padding: "4px 3px", fontWeight: 600 }}>{m.type}</td>
+                <td style={{ padding: "4px 3px", fontWeight: 600 }}>{m.type}{m.doorShape && m.doorShape !== "Square Top" ? ` (${m.doorShape})` : ""}</td>
                 <td style={{ padding: "4px 3px" }}>{m.origW}</td><td style={{ padding: "4px 3px" }}>{m.origH}</td>
                 <td style={{ padding: "4px 3px", fontWeight: 700, color: wMatch ? GREEN : m.verifiedW ? RED : "#666" }}>{m.verifiedW || "--"}</td>
                 <td style={{ padding: "4px 3px", fontWeight: 700, color: hMatch ? GREEN : m.verifiedH ? RED : "#666" }}>{m.verifiedH || "--"}</td>
@@ -183,6 +224,41 @@ export default function App() {
             );
           })}</tbody>
         </table>
+
+        {/* Materials to Order */}
+        {(() => {
+          const wins = measures.filter(m => m.key.startsWith("W"));
+          const drs = measures.filter(m => m.key.startsWith("D"));
+          const anyMat = measures.some(m => m.hasJamb || m.hasCasing || m.hasExtTrim || m.stoolIncluded || m.metalRoll || m.hardwareColor);
+          if (!anyMat) return null;
+          const chip = (label, val, color) => val ? <span key={label} style={{ fontSize: 8, background: `${color}15`, color, padding: "1px 5px", borderRadius: 6, fontWeight: 600, marginRight: 3 }}>{label}: {val}</span> : null;
+          return (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: NAVY, borderBottom: `2px solid ${ORANGE}`, paddingBottom: 4, marginBottom: 8 }}>MATERIALS TO ORDER</div>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 9 }}>
+                <thead><tr style={{ background: GRAY_BG }}>
+                  {["#", "Location", "Glass / Grid", "Jamb", "Casing", "Stool", "Ext Trim", "Metal Wrap", "Hardware", "Special"].map((h, i) =>
+                    <th key={i} style={{ padding: "4px 3px", textAlign: "left", fontWeight: 700, fontSize: 8, borderBottom: `1px solid ${GRAY_BORDER}`, color: NAVY }}>{h}</th>
+                  )}
+                </tr></thead>
+                <tbody>{measures.map((m, i) => (
+                  <tr key={m.key} style={{ borderBottom: "1px solid #eee", background: i % 2 === 0 ? "#fff" : "#f9fafb" }}>
+                    <td style={{ padding: "3px 3px", fontWeight: 700, color: m.key.startsWith("D") ? ORANGE : NAVY }}>{m.key}</td>
+                    <td style={{ padding: "3px 3px" }}>{m.location}</td>
+                    <td style={{ padding: "3px 3px", fontSize: 8 }}>{[m.glass, m.glassTexture !== "Clear" ? m.glassTexture : "", m.tempered !== "No" ? `Tempered:${m.tempered}` : "", m.gridType !== "None" ? `${m.gridType}${m.gridPattern ? ` ${m.gridPattern}` : ""}${m.litesW && m.litesH ? ` ${m.litesW}×${m.litesH}` : ""}` : ""].filter(Boolean).join(" | ")}</td>
+                    <td style={{ padding: "3px 3px", fontSize: 8 }}>{m.hasJamb ? [m.jambSize, m.jambSpecies, m.jambFinish, m.jambColor].filter(Boolean).join(" ") : "--"}</td>
+                    <td style={{ padding: "3px 3px", fontSize: 8 }}>{m.hasCasing ? [m.casingSpecies, m.casingFinish, m.casingColor].filter(Boolean).join(" ") || "✓" : "--"}</td>
+                    <td style={{ padding: "3px 3px", fontSize: 8 }}>{m.stoolIncluded ? `${m.stoolSize}${m.stoolColor ? ` ${m.stoolColor}` : ""}` : "--"}</td>
+                    <td style={{ padding: "3px 3px", fontSize: 8 }}>{m.hasExtTrim ? [m.extTrimSize, m.extTrimTexture, m.extTrimBrand].filter(Boolean).join(" ") || "✓" : "--"}</td>
+                    <td style={{ padding: "3px 3px", fontSize: 8 }}>{m.metalRoll ? `${m.metalRoll.replace("Roll - ", "")} ${m.metalColor || ""}`.trim() : "--"}</td>
+                    <td style={{ padding: "3px 3px", fontSize: 8 }}>{[m.hardwareColor, m.hardwareType].filter(Boolean).join(" / ") || "--"}</td>
+                    <td style={{ padding: "3px 3px", fontSize: 8 }}>{[m.doorShape && m.doorShape !== "Square Top" ? m.doorShape : "", m.sidelites && m.sidelites !== "None" ? `SL:${m.sidelites} ${m.sideliteW}"` : "", m.transom ? `Transom ${m.transomH}"` : ""].filter(Boolean).join(" | ") || ""}</td>
+                  </tr>
+                ))}</tbody>
+              </table>
+            </div>
+          );
+        })()}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 40, marginTop: 30, fontSize: 11 }}>
           <div><div style={{ borderTop: `1px solid ${NAVY}`, paddingTop: 6, marginTop: 30 }}><strong>Measure Tech Signature</strong><br />{projMeasure.techName} {"--"} {projMeasure.techDate}</div></div>
           <div><div style={{ borderTop: `1px solid ${NAVY}`, paddingTop: 6, marginTop: 30 }}><strong>Customer Confirmation</strong><br />Colors and scope verified</div></div>
@@ -264,14 +340,29 @@ export default function App() {
           const dimMismatch = (m.verifiedW && m.origW && m.verifiedW !== m.origW) || (m.verifiedH && m.origH && m.verifiedH !== m.origH);
           return (
             <div key={m.key} style={{ background: "#fff", borderRadius: 10, marginBottom: 6, boxShadow: "0 1px 3px rgba(0,0,0,0.08)", overflow: "hidden", border: m.verified ? `2px solid ${GREEN}40` : dimMismatch ? `2px solid ${RED}40` : `2px solid transparent` }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", background: m.verified ? `${GREEN}08` : "transparent" }}>
-                <div style={{ fontSize: 14, fontWeight: 800, color: isWin ? NAVY : ORANGE, width: 28, textAlign: "center" }}>{m.key}</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: NAVY }}>{m.location || "--"}</div>
-                  <div style={{ fontSize: 11, color: "#666" }}>{m.type} {"|"} Quote: {m.origW} {"x"} {m.origH}</div>
+              <div style={{ padding: "10px 12px", background: m.verified ? `${GREEN}08` : "transparent" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: isWin ? NAVY : ORANGE, width: 28, textAlign: "center" }}>{m.key}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: NAVY }}>{m.location || "--"}</div>
+                    <div style={{ fontSize: 11, color: "#666" }}>{m.type}{m.qty > 1 ? ` ×${m.qty}` : ""} | Quote: {m.origW} × {m.origH}{m.glassConfig ? ` | ${m.glassConfig}` : ""}{m.sidelites && m.sidelites !== "None" ? ` | SL:${m.sidelites}` : ""}{m.transom ? " | Transom" : ""}</div>
+                  </div>
+                  {m.verified && <div style={{ fontSize: 11, fontWeight: 700, color: GREEN, background: `${GREEN}15`, padding: "3px 10px", borderRadius: 12 }}>✓ Verified</div>}
+                  {dimMismatch && <div style={{ fontSize: 11, fontWeight: 700, color: RED, background: `${RED}15`, padding: "3px 10px", borderRadius: 12 }}>! Mismatch</div>}
                 </div>
-                {m.verified && <div style={{ fontSize: 11, fontWeight: 700, color: GREEN, background: `${GREEN}15`, padding: "3px 10px", borderRadius: 12 }}>OK Verified</div>}
-                {dimMismatch && <div style={{ fontSize: 11, fontWeight: 700, color: RED, background: `${RED}15`, padding: "3px 10px", borderRadius: 12 }}>! Size Mismatch</div>}
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 5, paddingLeft: 36 }}>
+                  {m.glass && <span style={{ fontSize: 9, background: `${NAVY}10`, color: NAVY, padding: "2px 6px", borderRadius: 8, fontWeight: 600 }}>{m.glass}</span>}
+                  {m.glassTexture && m.glassTexture !== "Clear" && <span style={{ fontSize: 9, background: `${NAVY}10`, color: NAVY, padding: "2px 6px", borderRadius: 8, fontWeight: 600 }}>{m.glassTexture}</span>}
+                  {m.gridType && m.gridType !== "None" && <span style={{ fontSize: 9, background: `${ORANGE}18`, color: ORANGE, padding: "2px 6px", borderRadius: 8, fontWeight: 600 }}>{m.gridType}{m.gridPattern ? ` ${m.gridPattern}` : ""}{m.litesW && m.litesH ? ` ${m.litesW}×${m.litesH}` : ""}</span>}
+                  {m.tempered && m.tempered !== "No" && <span style={{ fontSize: 9, background: `${RED}18`, color: "#b91c1c", padding: "2px 6px", borderRadius: 8, fontWeight: 700 }}>TEMPERED: {m.tempered}</span>}
+                  {m.hasJamb && m.jambSize && <span style={{ fontSize: 9, background: `${GREEN}15`, color: GREEN, padding: "2px 6px", borderRadius: 8, fontWeight: 600 }}>JAMB {m.jambSize}{m.jambSpecies ? ` ${m.jambSpecies}` : ""}</span>}
+                  {m.hasCasing && <span style={{ fontSize: 9, background: `${GREEN}15`, color: GREEN, padding: "2px 6px", borderRadius: 8, fontWeight: 600 }}>CSG{m.casingSpecies ? ` ${m.casingSpecies}` : ""}</span>}
+                  {m.stoolIncluded && <span style={{ fontSize: 9, background: `${ORANGE}18`, color: ORANGE, padding: "2px 6px", borderRadius: 8, fontWeight: 600 }}>STOOL {m.stoolSize}</span>}
+                  {m.hasExtTrim && <span style={{ fontSize: 9, background: `${NAVY}10`, color: NAVY, padding: "2px 6px", borderRadius: 8, fontWeight: 600 }}>EXT {m.extTrimSize}</span>}
+                  {m.metalRoll && <span style={{ fontSize: 9, background: `${NAVY}10`, color: NAVY, padding: "2px 6px", borderRadius: 8, fontWeight: 600 }}>METAL {m.metalColor}</span>}
+                  {m.hardwareColor && <span style={{ fontSize: 9, background: `${ORANGE}18`, color: ORANGE, padding: "2px 6px", borderRadius: 8, fontWeight: 600 }}>HW: {m.hardwareColor}</span>}
+                  {m.doorShape && m.doorShape !== "Square Top" && <span style={{ fontSize: 9, background: `${RED}18`, color: "#b91c1c", padding: "2px 6px", borderRadius: 8, fontWeight: 700 }}>SHAPE: {m.doorShape}</span>}
+                </div>
               </div>
               <div style={{ padding: "0 12px 12px", borderTop: `1px solid ${GRAY_BORDER}` }}>
                 {/* Dimensions */}
@@ -313,11 +404,15 @@ export default function App() {
                   <div><label style={lbl}>Exterior Obstructions</label><input style={inp} value={m.extObstruction} onChange={e => um(m.key, "extObstruction", e.target.value)} placeholder="Shutters, utilities, bushes..." /></div>
                 </div>
                 <div style={{ marginTop: 8 }}><label style={lbl}>Install Notes</label><input style={inp} value={m.installNotes} onChange={e => um(m.key, "installNotes", e.target.value)} placeholder="Special install instructions for this opening..." /></div>
-                {/* Verify button */}
-                <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10 }}>
+                {/* Verify controls */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10 }}>
+                  <label style={{ ...chk, fontSize: 12, color: m.materialConfirmed ? GREEN : "#374151" }}>
+                    <input type="checkbox" checked={m.materialConfirmed} onChange={e => um(m.key, "materialConfirmed", e.target.checked)} style={{ width: 18, height: 18, accentColor: GREEN }} />
+                    Materials confirmed on-site
+                  </label>
                   <button onClick={() => um(m.key, "verified", !m.verified)}
                     style={{ ...m.verified ? { ...bS, color: GREEN, borderColor: GREEN, background: `${GREEN}10` } : bP, padding: "8px 20px", fontSize: 13 }}>
-                    {m.verified ? "Verified" : "Mark Verified"}
+                    {m.verified ? "✓ Verified" : "Mark Verified"}
                   </button>
                 </div>
               </div>
@@ -330,7 +425,8 @@ export default function App() {
       <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "#fff", borderTop: `2px solid ${NAVY}`, padding: "8px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", zIndex: 50, boxShadow: "0 -2px 12px rgba(0,0,0,0.1)" }}>
         <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: allVerified ? GREEN : NAVY }}>{verifiedCount}/{totalOpenings} Verified</div>
-          {allVerified && <div style={{ fontSize: 12, fontWeight: 700, color: GREEN }}>OK ALL OPENINGS VERIFIED</div>}
+          <div style={{ fontSize: 12, color: "#666" }}>{measures.filter(m => m.materialConfirmed).length}/{totalOpenings} Materials OK</div>
+          {allVerified && <div style={{ fontSize: 12, fontWeight: 700, color: GREEN }}>✓ ALL OPENINGS VERIFIED</div>}
         </div>
         <div style={{ display: "flex", gap: 6 }}>
           <button onClick={saveMeasure} style={{ ...bS, padding: "8px 14px", fontSize: 12, background: saved ? "#ecfdf5" : "#fff", color: saved ? GREEN : NAVY }}>{saved ? "Saved" : "Save"}</button>

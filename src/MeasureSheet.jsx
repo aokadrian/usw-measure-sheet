@@ -791,8 +791,8 @@ export default function App() {
               </div>
               {w.gridType !== "None" && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 3fr", gap: 8, marginTop: 8 }}>
                 <div><label style={lbl}>Location</label><select style={sel} value={w.gridLocation || "Both"} onChange={e => uw(w.id, "gridLocation", e.target.value)}>{GRID_LOCATIONS.map(g => <option key={g}>{g}</option>)}</select></div>
-                <div><label style={lbl}>Lites W</label><input style={inp} value={w.litesW} onChange={e => uw(w.id, "litesW", e.target.value)} placeholder="2" /></div>
-                <div><label style={lbl}>Lites H</label><input style={inp} value={w.litesH} onChange={e => uw(w.id, "litesH", e.target.value)} placeholder="3" /></div><div />
+                <div><label style={lbl}>SDL W</label><input style={inp} value={w.litesW} onChange={e => uw(w.id, "litesW", e.target.value)} placeholder="2" /></div>
+                <div><label style={lbl}>SDL H</label><input style={inp} value={w.litesH} onChange={e => uw(w.id, "litesH", e.target.value)} placeholder="3" /></div><div />
               </div>}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginTop: 8 }}>
                 <div><label style={lbl}>Metal Roll</label><select style={sel} value={w.metalRoll} onChange={e => uw(w.id, "metalRoll", e.target.value)}>{METAL_OPTIONS.map(m => <option key={m} value={m}>{m || "-- None --"}</option>)}</select></div>
