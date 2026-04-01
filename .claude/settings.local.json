@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm --version)",
+      "Bash(export PATH=\"$PATH:/opt/homebrew/bin:/usr/local/bin:/usr/bin\")",
+      "Read(//opt/homebrew/**)",
+      "Read(//Users/unitewithus/.nvm/versions/**)",
+      "Bash(ls /usr/local/bin/node*)",
+      "Read(//Users/unitewithus/**)",
+      "Bash(gh auth:*)",
+      "Bash(brew --version)",
+      "Bash(export PATH=\"$PATH:/usr/local/bin:/opt/homebrew/bin:/opt/homebrew/sbin\")",
+      "Bash(npm create:*)",
+      "Bash(npm install:*)",
+      "Bash(cp \"/Users/unitewithus/Downloads/USW windwo measure sheet/uws-measure-sheet-2.jsx\" \"/Users/unitewithus/Downloads/usw-measure-sheet/src/MeasureSheet.jsx\")",
+      "Bash(cp \"/Users/unitewithus/Downloads/USW windwo measure sheet/uws-final-measure.jsx\" \"/Users/unitewithus/Downloads/usw-measure-sheet/src/FinalMeasure.jsx\")",
+      "Bash(npm run:*)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(gh repo:*)",
+      "Bash(gh api:*)",
+      "Read(//private/tmp/usw-measure-sheet/src/**)",
+      "Read(//private/tmp/usw-measure-sheet/.claude/**)",
+      "Read(//private/tmp/usw-measure-sheet/**)",
+      "Bash(cp /tmp/usw-measure-sheet/package.json \"/Users/unitewithus/Downloads/USW windwo measure sheet/\")",
+      "Bash(cp /tmp/usw-measure-sheet/package-lock.json \"/Users/unitewithus/Downloads/USW windwo measure sheet/\")",
+      "Bash(cp /tmp/usw-measure-sheet/vite.config.js \"/Users/unitewithus/Downloads/USW windwo measure sheet/\")",
+      "Bash(cp /tmp/usw-measure-sheet/eslint.config.js \"/Users/unitewithus/Downloads/USW windwo measure sheet/\")",
+      "Bash(cp /tmp/usw-measure-sheet/index.html \"/Users/unitewithus/Downloads/USW windwo measure sheet/\")",
+      "Bash(/usr/local/bin/node --version)",
+      "Bash(/usr/local/bin/npm run:*)",
+      "Bash(ls /usr/local/bin/npm*)",
+      "Bash(PATH=\"/usr/local/bin:$PATH\" npm run build)",
+      "Bash(PATH=/usr/local/bin:$PATH npm run build)"
+    ]
+  }
+}
