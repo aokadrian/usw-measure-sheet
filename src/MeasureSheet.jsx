@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 
 const ORANGE = "#F7941D";
@@ -450,6 +450,18 @@ const TRIM_BRAND_COLORS = {
   "Custom":        "#F7941D",  // brand orange
 };
 const getTrimBrandColor = (brand) => TRIM_BRAND_COLORS[brand] || NAVY;
+const EXT_TRIM_BRAND_COLORS = {
+  "James Hardie": ["Arctic White", "Navajo Beige", "Khaki Brown", "Monterey Taupe", "Cobble Stone", "Iron Gray", "Timber Bark", "Evening Blue", "Custom"],
+  "True Wood": ["Primed (paint ready)", "Custom"],
+  "LP Smart": ["Snowscape White", "Desert Stone", "Quarry Gray", "Prairie Clay", "Terra Brown", "Harvest Honey", "Timberland Suede", "Garden Sage", "Tundra Gray", "Summit Blue", "Cavern Steel", "Midnight Shadow", "Abyss Black", "Custom"],
+  "Syed": ["White", "Almond", "Custom"],
+  "Diamond Coat": ["White", "Sand", "Light Gray", "Clay", "French Gray", "Pelican", "Graphite", "Onyx", "Custom"],
+  "PVC": ["White", "Custom"],
+  "Azek": ["Cumulus White", "Suede Taupe", "Warm Stone", "Storm Cloud", "Graphite Gray", "Dark Shale", "Midnight Black", "Custom"],
+  "Miratec": ["White", "Beige", "Navajo White", "Tan", "Light Gray", "Sagebrush Green", "Wedgewood", "Gauntlet Gray", "Custom"],
+  "Custom": ["Custom"],
+};
+function getExtTrimColors(brand) { return EXT_TRIM_BRAND_COLORS[brand] || ["Custom"]; }
 
 function parseDim(s) {
   if (!s) return 0;
@@ -463,6 +475,7 @@ function parseDim(s) {
   return parseFloat(s) || 0;
 }
 function inToFt(i) { return i / 12; }
+function fmtDate(d) { if (!d) return ""; const [y,m,day] = d.split("-"); return `${m}/${day}/${y}`; }
 
 function calcMaterials(w) {
   const netW = parseDim(w.netW), netH = parseDim(w.netH);
@@ -570,9 +583,11 @@ function calcDoorMaterials(d) {
 
   // CASING: interior only -- 2 legs + 1 head (no bottom, no exterior side)
   // Extend casing width for sidelites, height for transom
-  const slW = parseDim(d.sideliteW) || 14;
+  const slWL = d.sidelites === "Both" ? (parseDim(d.sideliteWLeft) || 14) : (parseDim(d.sideliteW) || 14);
+  const slWR = d.sidelites === "Both" ? (parseDim(d.sideliteWRight) || 14) : (parseDim(d.sideliteW) || 14);
   const slCount = d.sidelites === "Both" ? 2 : (d.sidelites === "Left" || d.sidelites === "Right") ? 1 : 0;
-  const casingW = width + slW * slCount;
+  const casingSlW = slCount === 2 ? (slWL + slWR) : slCount === 1 ? slWL : 0;
+  const casingW = width + casingSlW;
   const casingH = height + (d.transom && d.transomH ? parseDim(d.transomH) : 0);
   const cLegFt = inToFt(casingH + 3), cHeadFt = inToFt(casingW + 6);
   const cRawLF = (cLegFt * 2 + cHeadFt) * qty;
@@ -610,9 +625,10 @@ function calcDoorMaterials(d) {
     slExtra = (inToFt(height + 2) + inToFt(slW + 2)) * qty;
     for (let i = 0; i < qty; i++) eBuyList.push(best(inToFt(height + 2) + inToFt(slW + 2), EXT_TRIM_STOCK));
   } else if (d.sidelites === "Both") {
-    const slW = parseDim(d.sideliteW) || 14;
-    slExtra = (inToFt(height + 2) * 2 + inToFt(slW + 2) * 2) * qty;
-    for (let i = 0; i < qty; i++) { eBuyList.push(best(inToFt(height + 2) + inToFt(slW + 2), EXT_TRIM_STOCK)); eBuyList.push(best(inToFt(height + 2) + inToFt(slW + 2), EXT_TRIM_STOCK)); }
+    const slWLv = parseDim(d.sideliteWLeft) || 14;
+    const slWRv = parseDim(d.sideliteWRight) || 14;
+    slExtra = (inToFt(height + 2) * 2 + inToFt(slWLv + 2) + inToFt(slWRv + 2)) * qty;
+    for (let i = 0; i < qty; i++) { eBuyList.push(best(inToFt(height + 2) + inToFt(slWLv + 2), EXT_TRIM_STOCK)); eBuyList.push(best(inToFt(height + 2) + inToFt(slWRv + 2), EXT_TRIM_STOCK)); }
   }
   eRawLF += slExtra;
   const eWithWaste = eRawLF * WASTE_FACTOR;
@@ -630,14 +646,14 @@ function calcDoorMaterials(d) {
 
 function getPcs(t) { return WINDOW_TYPES.find(x => x.code === t)?.pcs || 1; }
 
-const mkWin = () => ({ id: Date.now() + Math.random(), location: "", qty: 1, type: "DH", config: "", netW: "", netH: "", roughW: "", roughH: "", gridType: "None", gridPattern: "", gridLocation: "Both", litesW: "", litesH: "", tempered: "No", glass: "DP LoE2 Ar", glassTexture: "Clear", screen: "Full", hardwareColor: "", hardwareColorCustom: "", sashSplit: "50", hasTransom: false, transomH: "", transomType: "PIC", hasBottomLight: false, bottomLightH: "", bottomLightType: "AWN", casing: false, jamb: false, stools: false, wrapTrim: false, extTrim: false, winWrap: "", metalRoll: "", metalColor: "", shapeCode: "", shapeNotes: "", baySeatDepth: "", bayProjection: "", bayPanels: "", bowPanelCount: "4", notes: "", expanded: true, winLine: "1", mullOverallW: "", mullOverallH: "",
+const mkWin = () => ({ id: Date.now() + Math.random(), location: "", qty: 1, type: "DH", config: "", netW: "", netH: "", roughW: "", roughH: "", gridType: "None", gridPattern: "", gridLocation: "Both", litesW: "", litesH: "", tempered: "No", glass: "DP LoE2 Ar", glassTexture: "Clear", screen: "Full", hardwareColor: "", hardwareColorCustom: "", sashSplit: "50", hasTransom: false, transomH: "", transomType: "PIC", hasBottomLight: false, bottomLightH: "", bottomLightType: "AWN", casing: false, jamb: false, stools: false, wrapTrim: false, extTrim: false, winWrap: "", shapeCode: "", shapeNotes: "", baySeatDepth: "", bayProjection: "", bayPanels: "", bowPanelCount: "4", notes: "", expanded: true, winLine: "1", mullOverallW: "", mullOverallH: "",
   // Per-window Interior Trim
   jambSize: "", jambSizeCustom: "", jambSpecies: "", jambFinish: "", jambColor: "", jambStainColor: "", jambStainCustom: "",
   casingSize: "", casingSizeCustom: "", casingSpecies: "", casingFinish: "", casingColor: "", casingStainColor: "", casingStainCustom: "",
   // Per-window Stool
   stoolSize: "", stoolSizeCustom: "", stoolColor: "", stoolStainCustom: "", stoolNotes: "",
   // Per-window Exterior Trim
-  extTrimBrand: "", extTrimBrandCustom: "", extTrimSize: "", extTrimTexture: "", extTrimColor: "",
+  extTrimBrand: "", extTrimBrandCustom: "", extTrimSize: "", extTrimTexture: "", extTrimColor: "", extTrimColorCustom: "",
   // Per-window Wrap
   wrapTexture: "", wrapColor: "", wrapColorCustom: "", mullMode: false, mullUnits: "[]", mullSpanTop: false, mullSpanTopType: "HALF-RND", mullSpanTopH: "",
 });
@@ -646,11 +662,11 @@ const mkDoor = () => ({ id: Date.now() + Math.random(), type: "", location: "", 
   jambSize: "", jambSizeCustom: "", jambSpecies: "", jambFinish: "", jambColor: "", jambStainColor: "", jambStainCustom: "",
   casingSize: "", casingSizeCustom: "", casingSpecies: "", casingFinish: "", casingColor: "", casingStainColor: "", casingStainCustom: "",
   // Per-door Exterior Trim
-  extTrimBrand: "", extTrimBrandCustom: "", extTrimSize: "", extTrimTexture: "", extTrimColor: "",
+  extTrimBrand: "", extTrimBrandCustom: "", extTrimSize: "", extTrimTexture: "", extTrimColor: "", extTrimColorCustom: "",
   // Per-door Wrap
   wrapTexture: "", wrapColor: "", wrapColorCustom: "",
 });
-const mkProj = () => ({ customer: "", address: "", city: "", state: "", zip: "", date: new Date().toISOString().split("T")[0], installType: "Replacement", brand: "Midway by Alliance", brandCustom: "", series: "", brand2: "", brandCustom2: "", series2: "", showBrand2: false, doorBrand: "", doorBrandCustom: "", doorSeries: "", supplier: "GENERIC", brickmould: "", jChannel: "", wallThick: "2x4", winIntColor: "White", winIntFinish: "", winIntStainColor: "", winExtColor: "White", winInt2Color: "White", winInt2Finish: "", winInt2StainColor: "", winExt2Color: "White", doorIntColor: "", doorExtColor: "", specialColor: "", zapierUrl: "" });
+const mkProj = () => ({ customer: "", address: "", city: "", state: "", zip: "", phone: "", email: "", repName: "", date: new Date().toISOString().split("T")[0], installType: "Replacement", brand: "Midway by Alliance", brandCustom: "", series: "", seriesCustom: "", brand2: "", brandCustom2: "", series2: "", seriesCustom2: "", showBrand2: false, doorBrand: "", doorBrandCustom: "", doorSeries: "", doorSeriesCustom: "", supplier: "GENERIC", brickmould: "", jChannel: "", wallThick: "2x4", winIntColor: "White", winIntFinish: "", winIntStainColor: "", winExtColor: "White", winInt2Color: "White", winInt2Finish: "", winInt2StainColor: "", winExt2Color: "White", doorIntColor: "", doorExtColor: "", specialColor: "", projectNotes: "", zapierUrl: "" });
 
 function ShapeCanvas({ win, onChange }) {
   const pw = 200, ph = 160;
@@ -837,10 +853,10 @@ function MullPreview({ units, overallW, overallH, spanTop, spanTopType, spanTopH
   );
 }
 
-function CompositeConfig({ win, onChange }) {
+function CompositeConfig({ win, onChange, brand, series }) {
   const units = (() => { try { return JSON.parse(win.mullUnits || "[]"); } catch(e) { return []; } })();
   const addUnit = () => {
-    const nu = { id: Date.now() + Math.random(), type: "DH", relW: 1, topType: "", topH: "", bottomType: "", bottomH: "", unitNetW: "", unitNetH: "" };
+    const nu = { id: Date.now() + Math.random(), type: "DH", relW: 1, topType: "", topH: "", bottomType: "", bottomH: "", unitNetW: "", unitNetH: "", glass: "DP LoE2 Ar", gridType: "None", gridPattern: "", screen: "Full", tempered: "No", hardwareColor: "" };
     onChange("mullUnits", JSON.stringify([...units, nu]));
   };
   const removeUnit = id => onChange("mullUnits", JSON.stringify(units.filter(u => u.id !== id)));
@@ -1005,6 +1021,44 @@ function CompositeConfig({ win, onChange }) {
                     <input type="number" min="6" max="72" style={{ ...bbInp, width: 52 }} value={u.bottomH || ""} onChange={e => upUnit(u.id, "bottomH", e.target.value)} placeholder="18" />
                   </div>
                 )}
+              </div>
+
+              {/* Per-unit options */}
+              <div style={{ marginTop: 5, padding: "4px 5px", background: "#f8f9fa", border: `1px solid ${GRAY_BORDER}`, borderRadius: 4 }}>
+                <div style={{ fontSize: 8, fontWeight: 700, color: NAVY, marginBottom: 2 }}>OPTIONS</div>
+                <div style={{ fontSize: 8, color: "#666", marginBottom: 1 }}>Glass</div>
+                <select style={{ ...bbSel, fontSize: 9 }} value={u.glass || "DP LoE2 Ar"} onChange={e => upUnit(u.id, "glass", e.target.value)}>
+                  {getGlassOptions(brand, series).map(g => <option key={g}>{g}</option>)}
+                </select>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, marginTop: 3 }}>
+                  <div>
+                    <div style={{ fontSize: 7, color: "#666" }}>Grid</div>
+                    <select style={{ ...bbSel, fontSize: 9 }} value={u.gridType || "None"} onChange={e => upUnit(u.id, "gridType", e.target.value)}>
+                      {GRID_TYPES.map(g => <option key={g}>{g}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 7, color: "#666" }}>Screen</div>
+                    <select style={{ ...bbSel, fontSize: 9 }} value={u.screen || "Full"} onChange={e => upUnit(u.id, "screen", e.target.value)}>
+                      {SCREEN_OPTIONS.map(s => <option key={s}>{s}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, marginTop: 3 }}>
+                  <div>
+                    <div style={{ fontSize: 7, color: "#666" }}>Tempered</div>
+                    <select style={{ ...bbSel, fontSize: 9 }} value={u.tempered || "No"} onChange={e => upUnit(u.id, "tempered", e.target.value)}>
+                      {TEMPERED_OPTIONS.map(t => <option key={t}>{t}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 7, color: "#666" }}>Hardware</div>
+                    <select style={{ ...bbSel, fontSize: 9 }} value={u.hardwareColor || ""} onChange={e => upUnit(u.id, "hardwareColor", e.target.value)}>
+                      <option value="">--</option>
+                      {(getHardwareColors(brand, series) || []).filter(Boolean).map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
+                </div>
               </div>
 
               {/* Calculated sizes */}
@@ -1261,7 +1315,7 @@ export default function App() {
     setZapStatus("Sending...");
     try {
       const payload = {
-        project: { customer: proj.customer, address: proj.address, date: proj.date, installType: proj.installType, brand: proj.brand, series: proj.series, supplier: proj.supplier },
+        project: { customer: proj.customer, address: [proj.address, proj.city, proj.state, proj.zip].filter(Boolean).join(", "), phone: proj.phone, email: proj.email, repName: proj.repName, date: proj.date, installType: proj.installType, brand: proj.brand, series: proj.series, supplier: proj.supplier, projectNotes: proj.projectNotes },
         windows: wins.map((w, i) => ({ num: i + 1, location: w.location, qty: w.qty, type: w.type, config: w.config, netW: w.netW, netH: w.netH, roughW: w.roughW, roughH: w.roughH, glass: w.glass, gridType: w.gridType, tempered: w.tempered, screen: w.screen, notes: w.notes, shape: w.type === "SHAPE" ? w.shapeCode : "" })),
         doors: doors.map((d, i) => ({ num: i + 1, location: d.location, type: d.type, qty: d.qty, handing: d.handing, netW: d.netW, netH: d.netH, glassConfig: d.glassConfig, sidelites: d.sidelites, notes: d.notes })),
         totals: { windowQty: tQty, windowPcs: tPcs, doorCount: doors.length },
@@ -1299,9 +1353,10 @@ export default function App() {
           <div><div style={{ fontSize: 20, fontWeight: 800, color: NAVY, letterSpacing: 1 }}>UNITED WINDOWS & SIDING</div><div style={{ fontSize: 15, fontWeight: 700, color: ORANGE, marginTop: 2 }}>WINDOW & DOOR MEASURE SHEET</div></div>
           <div style={{ textAlign: "right", fontSize: 11, color: "#666" }}><div>(319) 259-6464</div><div style={{ fontStyle: "italic" }}>Uniting the community one customer at a time.</div></div>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, fontSize: 12, marginBottom: 12 }}>
-          <div><strong>Customer:</strong> {proj.customer}</div><div><strong>Address:</strong> {[proj.address, proj.city, proj.state, proj.zip].filter(Boolean).join(", ")}</div><div><strong>Date:</strong> {proj.date}</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 10, fontSize: 12, marginBottom: 12 }}>
+          <div><strong>Customer:</strong> {proj.customer}</div><div><strong>Address:</strong> {[proj.address, proj.city, proj.state, proj.zip].filter(Boolean).join(", ")}</div><div><strong>Date:</strong> {fmtDate(proj.date)}</div><div><strong>Rep:</strong> {proj.repName || "—"}</div>
         </div>
+        {(proj.phone || proj.email) && <div style={{ fontSize: 11, marginBottom: 8, color: "#555" }}>{proj.phone && <span><strong>Phone:</strong> {proj.phone}</span>}{proj.phone && proj.email && " | "}{proj.email && <span><strong>Email:</strong> {proj.email}</span>}</div>}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 8, fontSize: 11, marginBottom: 8, padding: "8px 10px", background: GRAY_BG, borderRadius: 6 }}>
           <div><strong>Install:</strong> {proj.installType}</div><div><strong>Brand:</strong> {proj.brand === "Custom" ? proj.brandCustom : proj.brand}{proj.series ? ` — ${proj.series}` : ""}</div><div><strong>Wall:</strong> {proj.wallThick}</div><div><strong>Brickmould:</strong> {proj.brickmould || "—"} | <strong>J-Ch:</strong> {proj.jChannel || "—"}</div>
           <div><strong>Window Interior:</strong> {isWoodSeries(proj.brand, proj.series) ? (proj.winIntFinish === "Stained" ? `Stained — ${proj.winIntStainColor || "--"}` : proj.winIntFinish === "Painted" ? `Painted ${proj.winIntColor}` : proj.winIntFinish || proj.winIntColor) : proj.winIntColor}</div>
@@ -1312,19 +1367,23 @@ export default function App() {
           <div><strong>L2 Interior:</strong> {isWoodSeries(proj.brand2, proj.series2) ? (proj.winInt2Finish === "Stained" ? `Stained — ${proj.winInt2StainColor || "--"}` : proj.winInt2Finish === "Painted" ? `Painted ${proj.winInt2Color}` : proj.winInt2Finish || proj.winInt2Color) : proj.winInt2Color}</div>
           <div><strong>L2 Exterior:</strong> {proj.winExt2Color}</div><div /></>}
         </div>
-        {proj.specialColor && <div style={{ fontSize: 11, marginBottom: 10 }}><strong>Special Color:</strong> {proj.specialColor}</div>}
+        {proj.specialColor && <div style={{ fontSize: 11, marginBottom: 6 }}><strong>Special Color:</strong> {proj.specialColor}</div>}
+        {proj.doorBrand && <div style={{ fontSize: 11, marginBottom: 6 }}><strong>Door Brand:</strong> {proj.doorBrand === "Custom" ? proj.doorBrandCustom : proj.doorBrand}{proj.doorSeries ? ` — ${proj.doorSeries}` : ""}{proj.doorIntColor ? ` | Int: ${proj.doorIntColor}` : ""}{proj.doorExtColor ? ` | Ext: ${proj.doorExtColor}` : ""}</div>}
+        {proj.projectNotes && <div style={{ fontSize: 11, marginBottom: 10, padding: "6px 10px", background: `${NAVY}06`, border: `1px solid ${NAVY}15`, borderRadius: 4 }}><strong>Notes:</strong> {proj.projectNotes}</div>}
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 10 }}>
             <thead><tr style={{ background: NAVY, color: "#fff" }}>
-              {["#", "Location", "Qty", "Type", sLbl.config, sLbl.netW, sLbl.netH, sLbl.roughW, sLbl.roughH, "Glass", "Grid / SDL", "Tempered", "Screen", "Hardware", "Shape", "Metal", "Ext Trim", "Wrap", "Notes", "Units", ""].map((h, i) =>
+              {["#", "Location", "Qty", "Type", sLbl.config, sLbl.netW, sLbl.netH, sLbl.roughW, sLbl.roughH, "Glass", "Grid / SDL", "Tempered", "Screen", "Hardware", "Shape", "Ext Trim", "Wrap", "Notes", "Units", ""].map((h, i) =>
                 <th key={i} style={{ padding: "5px 3px", textAlign: "left", fontWeight: 600, fontSize: 9, whiteSpace: "nowrap", borderRight: "1px solid #1a5a7a", background: i % 2 === 0 ? "#004f7a" : NAVY }}>{h}</th>
               )}
             </tr></thead>
             <tbody>{wins.map((w, i) => {
               const bb = bayBowSummary(w);
               const shapeName = w.type === "SHAPE" && w.shapeCode ? ` (${SHAPE_PRESETS.find(sp => sp.code === w.shapeCode)?.name || w.shapeCode})` : "";
-              return (
-                <tr key={w.id} style={{ borderBottom: "1px solid #ddd" }}>
+              const isMull = w.mullMode && w.mullUnits && w.mullUnits !== "[]";
+              let mullParsed = []; if (isMull) try { mullParsed = JSON.parse(w.mullUnits); } catch(e) {}
+              return (<React.Fragment key={w.id}>
+                <tr style={{ borderBottom: isMull ? "none" : "1px solid #ddd" }}>
                   <td style={{ padding: "4px 3px", fontWeight: 600, background: "#EEF3F8" }}>{i + 1}</td>
                   <td style={{ padding: "4px 3px", background: "#fff" }}>{w.location}</td>
                   <td style={{ padding: "4px 3px", textAlign: "center", background: "#EEF3F8" }}>{w.qty}</td>
@@ -1340,10 +1399,9 @@ export default function App() {
                   <td style={{ padding: "4px 3px", background: "#EEF3F8" }}>{w.screen}</td>
                   <td style={{ padding: "4px 3px", fontSize: 9, background: "#fff" }}>{w.hardwareColor || ""}</td>
                   <td style={{ padding: "4px 3px", fontSize: 9, background: "#EEF3F8" }}>{w.type === "SHAPE" && w.shapeCode ? (SHAPE_PRESETS.find(sp => sp.code === w.shapeCode)?.name || w.shapeCode) : ""}</td>
-                  <td style={{ padding: "4px 3px", fontSize: 9, background: "#fff" }}>{w.metalRoll || ""}</td>
-                  <td style={{ padding: "4px 3px", fontSize: 9, background: "#EEF3F8" }}>{w.extTrim ? (() => { const b = w.extTrimBrand === "Custom" ? w.extTrimBrandCustom : w.extTrimBrand; const desc = [b, w.extTrimSize, w.extTrimTexture].filter(Boolean).join(" "); return <span style={{ color: getTrimBrandColor(w.extTrimBrand === "Custom" ? "Custom" : w.extTrimBrand), fontWeight: 700 }}>{desc || "✓"}</span>; })() : ""}</td>
+                  <td style={{ padding: "4px 3px", fontSize: 9, background: "#fff" }}>{w.extTrim ? (() => { const b = w.extTrimBrand === "Custom" ? w.extTrimBrandCustom : w.extTrimBrand; const desc = [b, w.extTrimSize, w.extTrimTexture].filter(Boolean).join(" "); return <span style={{ color: getTrimBrandColor(w.extTrimBrand === "Custom" ? "Custom" : w.extTrimBrand), fontWeight: 700 }}>{desc || "✓"}</span>; })() : ""}</td>
                   <td style={{ padding: "4px 3px", fontSize: 9, background: "#fff" }}>{w.wrapTrim ? [w.wrapTexture, w.wrapColor === "Custom" ? w.wrapColorCustom : w.wrapColor].filter(Boolean).join(" ") || "Wrap" : ""}</td>
-                  <td style={{ padding: "4px 3px", fontSize: 9, maxWidth: 90, overflow: "hidden", textOverflow: "ellipsis", background: "#EEF3F8" }}>{[w.notes, w.type === "SHAPE" && w.shapeNotes ? `Shape: ${w.shapeNotes}` : "", bb, (w.type === "DH" || w.type === "SH") && parseInt(w.sashSplit) !== 50 ? `Sash ${w.sashSplit}/${100-parseInt(w.sashSplit||50)}` : "", w.hasTransom && w.transomH ? `Transom: ${w.transomType || "TRN"} ${w.transomH}"` : "", w.hasBottomLight && w.bottomLightH ? `Bot: ${w.bottomLightType || "AWN"} ${w.bottomLightH}"` : ""].filter(Boolean).join(" | ")}</td>
+                  <td style={{ padding: "4px 3px", fontSize: 9, maxWidth: 90, overflow: "hidden", textOverflow: "ellipsis", background: "#EEF3F8" }}>{[w.notes, w.type === "SHAPE" && w.shapeNotes ? `Shape: ${w.shapeNotes}` : "", bb, (w.type === "DH" || w.type === "SH") && parseInt(w.sashSplit) !== 50 ? `Sash ${w.sashSplit}/${100-parseInt(w.sashSplit||50)}` : "", w.hasTransom && w.transomH ? `Transom: ${w.transomType || "TRN"} ${w.transomH}"` : "", w.hasBottomLight && w.bottomLightH ? `Bot: ${w.bottomLightType || "AWN"} ${w.bottomLightH}"` : "", w.winWrap ? `Wrap: ${w.winWrap}` : "", w.mullMode ? "Mulled: see detail" : ""].filter(Boolean).join(" | ")}</td>
                   <td style={{ padding: "4px 3px", textAlign: "center", fontWeight: 700, color: ORANGE, background: "#fff" }}>{(parseInt(w.qty) || 0) * getPcs(w.type)}</td>
                   <td style={{ padding: "2px 3px", background: "#EEF3F8", textAlign: "center" }}>
                     {(() => {
@@ -1366,9 +1424,49 @@ export default function App() {
                       return <svg viewBox="0 0 32 28" width={W} height={H}><rect x={2} y={2} width={28} height={24} fill={`${NAVY}10`} stroke={NAVY} strokeWidth={1.2}/><text x={16} y={17} textAnchor="middle" fontSize={7} fill={NAVY} fontWeight="700">{w.type}</text></svg>;
                     })()}
                   </td>
-                </tr>);
+                </tr>
+                {isMull && mullParsed.length > 0 && (
+                  <tr><td colSpan="20" style={{ padding: "8px 12px", background: `${ORANGE}06`, borderBottom: "1px solid #ddd" }}>
+                    <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
+                      {/* Mulled unit SVG */}
+                      <div style={{ minWidth: 200 }}>
+                        <MullPreview units={mullParsed} overallW={w.mullOverallW} overallH={w.mullOverallH} spanTop={w.mullSpanTop} spanTopType={w.mullSpanTopType || "HALF-RND"} spanTopH={w.mullSpanTopH} />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: ORANGE, marginBottom: 4 }}>
+                          MULLED ASSEMBLY — {w.location || `Win #${i+1}`}
+                          {(w.mullOverallW || w.mullOverallH) && <span style={{ fontWeight: 400, color: "#666", marginLeft: 8 }}>Overall: {[w.mullOverallW && `${w.mullOverallW}" W`, w.mullOverallH && `${w.mullOverallH}" H`].filter(Boolean).join(" × ")}</span>}
+                        </div>
+                        {w.mullSpanTop && w.mullSpanTopType && <div style={{ fontSize: 9, color: ORANGE, fontWeight: 700, marginBottom: 4 }}>Spanning Top: {SHAPE_PRESETS.find(s=>s.code===w.mullSpanTopType)?.name || w.mullSpanTopType}{w.mullSpanTopH ? ` — ${w.mullSpanTopH}"` : ""}</div>}
+                        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 9 }}>
+                          <thead><tr style={{ background: GRAY_BG }}>{["Unit","Top","Top H","Main Type","Net W","Net H","Glass","Grid","Screen","Tempered","Bottom","Bot H"].map((h,hi) => <th key={hi} style={{ padding: "2px 4px", textAlign: "left", fontWeight: 700, color: NAVY, borderBottom: `1px solid ${GRAY_BORDER}` }}>{h}</th>)}</tr></thead>
+                          <tbody>{mullParsed.map((u, ui) => {
+                            const topName = u.topType ? (SHAPE_PRESETS.find(s=>s.code===u.topType)?.name || WINDOW_TYPES.find(t=>t.code===u.topType)?.name || u.topType) : "—";
+                            const botName = u.bottomType ? (WINDOW_TYPES.find(t=>t.code===u.bottomType)?.name || u.bottomType) : "—";
+                            const mainName = WINDOW_TYPES.find(t=>t.code===u.type)?.name || u.type;
+                            return (<tr key={u.id || ui} style={{ borderBottom: "1px solid #eee" }}>
+                              <td style={{ padding: "2px 4px", fontWeight: 700, color: ORANGE }}>U{ui+1}</td>
+                              <td style={{ padding: "2px 4px" }}>{topName}</td>
+                              <td style={{ padding: "2px 4px" }}>{u.topType && u.topH ? `${u.topH}"` : "—"}</td>
+                              <td style={{ padding: "2px 4px", fontWeight: 600 }}>{mainName}</td>
+                              <td style={{ padding: "2px 4px" }}>{u.unitNetW ? `${u.unitNetW}"` : "—"}</td>
+                              <td style={{ padding: "2px 4px" }}>{u.unitNetH ? `${u.unitNetH}"` : "—"}</td>
+                              <td style={{ padding: "2px 4px" }}>{u.glass || "DP LoE2 Ar"}</td>
+                              <td style={{ padding: "2px 4px" }}>{u.gridType && u.gridType !== "None" ? u.gridType : "—"}</td>
+                              <td style={{ padding: "2px 4px" }}>{u.screen || "Full"}</td>
+                              <td style={{ padding: "2px 4px" }}>{u.tempered && u.tempered !== "No" ? u.tempered : ""}</td>
+                              <td style={{ padding: "2px 4px" }}>{botName}</td>
+                              <td style={{ padding: "2px 4px" }}>{u.bottomType && u.bottomH ? `${u.bottomH}"` : "—"}</td>
+                            </tr>);
+                          })}</tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </td></tr>
+                )}
+              </React.Fragment>);
             })}</tbody>
-            <tfoot><tr style={{ background: NAVY, color: "#fff", fontWeight: 700 }}><td colSpan="2" style={{ padding: "5px 6px" }}>TOTALS</td><td style={{ padding: "5px 3px", textAlign: "center" }}>{tQty}</td><td colSpan="16" /><td style={{ padding: "5px 3px", textAlign: "center", color: ORANGE, fontSize: 12 }}>{tPcs}</td><td /></tr></tfoot>
+            <tfoot><tr style={{ background: NAVY, color: "#fff", fontWeight: 700 }}><td colSpan="2" style={{ padding: "5px 6px" }}>TOTALS</td><td style={{ padding: "5px 3px", textAlign: "center" }}>{tQty}</td><td colSpan="15" /><td style={{ padding: "5px 3px", textAlign: "center", color: ORANGE, fontSize: 12 }}>{tPcs}</td><td /></tr></tfoot>
           </table>
         </div>
         {(parseFloat(matSum.jLF) > 0 || parseFloat(matSum.cLF) > 0 || parseFloat(matSum.eLF) > 0) && (() => {
@@ -1380,10 +1478,10 @@ export default function App() {
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, fontSize: 11 }}>
                 {parseFloat(matSum.jLF) > 0 && <div><strong>Interior Jamb:</strong> {matSum.jLF} LF ({matSum.jP} pcs)<br /><span style={{ color: "#555" }}>{[...new Set(wins.filter(w=>w.jamb).map(w=>{ const sz=w.jambSize==="Custom"?w.jambSizeCustom:w.jambSize; const col=w.jambFinish==="Stained"?(w.jambStainColor==="Custom"?w.jambStainCustom:w.jambStainColor):w.jambColor; return [sz,w.jambSpecies,w.jambFinish,col].filter(Boolean).join(" / "); }))].join(" | ") || "Specs TBD"}</span></div>}
                 {parseFloat(matSum.cLF) > 0 && <div><strong>Interior Casing:</strong> {matSum.cLF} LF ({matSum.cP} pcs)<br /><span style={{ color: "#555" }}>{[...new Set(wins.filter(w=>w.casing).map(w=>{ const col=w.casingFinish==="Stained"?(w.casingStainColor==="Custom"?w.casingStainCustom:w.casingStainColor):w.casingColor; return [w.casingSpecies,w.casingFinish,col].filter(Boolean).join(" / "); }))].join(" | ") || "Specs TBD"}</span></div>}
-                {parseFloat(matSum.eLF) > 0 && <div><strong>Exterior Trim:</strong> {matSum.eLF} LF<br />{(() => { const entries = [...new Map(wins.filter(w=>w.extTrim).map(w => { const b = w.extTrimBrand === "Custom" ? w.extTrimBrandCustom : w.extTrimBrand; const key = [b, w.extTrimSize, w.extTrimTexture, w.extTrimColor].filter(Boolean).join(" "); return [key, b]; })).entries()]; return entries.length ? entries.map(([desc, brand], i) => <span key={i}>{i > 0 && " | "}<span style={{ color: getTrimBrandColor(brand), fontWeight: 700 }}>{desc || "TBD"}</span></span>) : <span style={{ color: "#888" }}>Brand / type TBD</span>; })()}</div>}
+                {parseFloat(matSum.eLF) > 0 && <div><strong>Exterior Trim:</strong> {matSum.eLF} LF<br />{(() => { const entries = [...new Map(wins.filter(w=>w.extTrim).map(w => { const b = w.extTrimBrand === "Custom" ? w.extTrimBrandCustom : w.extTrimBrand; const key = [b, w.extTrimSize, w.extTrimTexture, w.extTrimColor === "Custom" ? w.extTrimColorCustom || "Custom" : w.extTrimColor].filter(Boolean).join(" "); return [key, b]; })).entries()]; return entries.length ? entries.map(([desc, brand], i) => <span key={i}>{i > 0 && " | "}<span style={{ color: getTrimBrandColor(brand), fontWeight: 700 }}>{desc || "TBD"}</span></span>) : <span style={{ color: "#888" }}>Brand / type TBD</span>; })()}</div>}
                 {stoolWins.length > 0 && <div><strong>Stools:</strong> {stoolWins.length} pc{stoolWins.length > 1 ? "s" : ""}<br /><span style={{ color: "#555" }}>{stoolWins.map(w => { const sz=w.stoolSize==="Custom"?w.stoolSizeCustom:w.stoolSize; const col=w.stoolColor==="Custom"?w.stoolStainCustom:w.stoolColor; return `${(parseDim(w.netW)+5).toFixed(0)}" ${sz||""} ${col||""} — ${w.location||"W"+(wins.indexOf(w)+1)}`; }).join(", ")}</span></div>}
-                {wrapWins.length > 0 && (() => { const wrapLF = wrapWins.map(w=>{ const wid=parseDim(w.netW||w.roughW),hgt=parseDim(w.netH||w.roughH),qty=parseInt(w.qty)||1; return wid&&hgt?((2*(wid+2)+2*(hgt+2))/12*qty*WASTE_FACTOR):0; }).reduce((a,b)=>a+b,0); const rolls = Math.ceil(wrapLF / 50); return <div><strong>Metal Wrap / Coil:</strong> {wrapLF.toFixed(1)} LF — <span style={{ color: ORANGE, fontWeight: 700 }}>{rolls} roll{rolls !== 1 ? "s" : ""} of 50'</span><br /><span style={{ color: "#555" }}>{[...new Set(wrapWins.map(w=>[w.wrapTexture,w.wrapColor==="Custom"?w.wrapColorCustom:w.wrapColor].filter(Boolean).join(" ")))].join(" | ") || "Specs TBD"}</span></div>; })()}
-                {wins.some(w => w.metalRoll) && (() => { const groups = {}; wins.filter(w => w.metalRoll).forEach(w => { const k = w.metalRoll + (w.metalColor ? ` — ${w.metalColor === "Custom" ? w.metalColorCustom || w.metalColor : w.metalColor}` : ""); groups[k] = (groups[k] || 0) + (parseInt(w.qty) || 1); }); return <div><strong>Metal Coil Rolls to Order:</strong><br />{Object.entries(groups).map(([type, qty], i) => <span key={i} style={{ display: "block", color: NAVY, fontWeight: 600 }}>{qty}x {type}</span>)}</div>; })()}
+                {wrapWins.length > 0 && (() => { const wrapLF = wrapWins.map(w=>{ const wid=parseDim(w.netW||w.roughW),hgt=parseDim(w.netH||w.roughH),qty=parseInt(w.qty)||1; return wid&&hgt?((2*(wid+2)+2*(hgt+2))/12*qty*WASTE_FACTOR):0; }).reduce((a,b)=>a+b,0); const rolls = Math.ceil(wrapLF / 50); return <div><strong>Metal Wrap:</strong> {wrapLF.toFixed(1)} LF — <span style={{ color: ORANGE, fontWeight: 700 }}>{rolls} roll{rolls !== 1 ? "s" : ""} of 50'</span><br /><span style={{ color: "#555" }}>{[...new Set(wrapWins.map(w=>[w.wrapTexture,w.wrapColor==="Custom"?w.wrapColorCustom:w.wrapColor].filter(Boolean).join(" ")))].join(" | ") || "Specs TBD"}</span></div>; })()}
+
               </div>
               {/* Per-window material lengths */}
               {wins.some(w => (w.jamb || w.casing || w.extTrim || w.stools) && (parseDim(w.netW) > 0 || parseDim(w.roughW) > 0)) && (
@@ -1434,81 +1532,11 @@ export default function App() {
             </div>
           </div>
         )}
-        {wins.some(w => w.mullMode && w.mullUnits && w.mullUnits !== "[]") && (() => {
-          const mullWins = wins.filter(w => w.mullMode && w.mullUnits && w.mullUnits !== "[]");
-          return (
-            <div style={{ marginTop: 16 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: NAVY, marginBottom: 8, borderBottom: `2px solid ${ORANGE}`, paddingBottom: 4 }}>MULLED UNIT DETAILS</div>
-              {mullWins.map((w, wi) => {
-                let units2 = []; try { units2 = JSON.parse(w.mullUnits); } catch(e) {}
-                if (!units2.length) return null;
-                const spanTopName = w.mullSpanTop && w.mullSpanTopType ? (SHAPE_PRESETS.find(s=>s.code===w.mullSpanTopType)?.name || w.mullSpanTopType) : null;
-                return (
-                  <div key={w.id} style={{ marginBottom: 12, padding: 10, border: `1px solid ${GRAY_BORDER}`, borderRadius: 6 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: NAVY, marginBottom: 4 }}>
-                      W{wins.indexOf(w)+1} — {w.location || "Mulled Unit"}
-                      {(w.mullOverallW || w.mullOverallH) && <span style={{ fontWeight: 400, color: "#666", marginLeft: 8 }}>Overall: {[w.mullOverallW && `${w.mullOverallW}" W`, w.mullOverallH && `${w.mullOverallH}" H`].filter(Boolean).join(" × ")}</span>}
-                    </div>
-                    {spanTopName && <div style={{ fontSize: 10, color: ORANGE, fontWeight: 700, marginBottom: 4 }}>▲ Spanning Shape Top: {spanTopName}{w.mullSpanTopH ? ` — ${w.mullSpanTopH}"` : ""} (spans all units)</div>}
-                    {units2.length > 0 && (() => {
-                      const totalW = units2.reduce((s, u) => s + (parseDim(u.unitNetW) || 40), 0);
-                      const svgW = 280, svgH = 80;
-                      let x = 0;
-                      return (
-                        <svg viewBox={`0 0 ${totalW} 90`} width={svgW} height={svgH} style={{ marginBottom: 8, border: `1px solid ${GRAY_BORDER}`, borderRadius: 4, background: "#f8f9fa" }}>
-                          {units2.map((u, ui) => {
-                            const uw2 = parseDim(u.unitNetW) || 40;
-                            const uh = parseDim(u.unitNetH) || 60;
-                            const rx = x; x += uw2;
-                            const topH = u.topType && u.topH ? parseDim(u.topH) : 0;
-                            const botH = u.bottomType && u.bottomH ? parseDim(u.bottomH) : 0;
-                            const mainH = uh - topH - botH;
-                            const yScale = 80 / (uh || 80);
-                            const mainName = WINDOW_TYPES.find(t => t.code === u.type)?.name?.split(" ")[0] || u.type;
-                            return (
-                              <g key={u.id}>
-                                <rect x={rx + 1} y={topH * yScale + 1} width={uw2 - 2} height={Math.max(mainH * yScale - 2, 4)} fill={`${NAVY}12`} stroke={NAVY} strokeWidth={1} />
-                                <text x={rx + uw2 / 2} y={topH * yScale + mainH * yScale / 2 + 3} textAnchor="middle" fontSize={6} fill={NAVY} fontWeight="700">{mainName}</text>
-                                {topH > 0 && <rect x={rx + 1} y={1} width={uw2 - 2} height={topH * yScale - 2} fill={`${ORANGE}25`} stroke={ORANGE} strokeWidth={0.8} />}
-                                {botH > 0 && <rect x={rx + 1} y={(topH + mainH) * yScale + 1} width={uw2 - 2} height={botH * yScale - 2} fill={`${NAVY}08`} stroke={NAVY} strokeWidth={0.8} strokeDasharray="2,1" />}
-                                <text x={rx + uw2 / 2} y={88} textAnchor="middle" fontSize={5} fill="#666">U{ui + 1}</text>
-                              </g>
-                            );
-                          })}
-                        </svg>
-                      );
-                    })()}
-                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 9 }}>
-                      <thead><tr style={{ background: GRAY_BG }}>
-                        {["Unit","Top","Top H","Main Type","Net W","Net H","Bottom","Bot H"].map((h,i) => <th key={i} style={{ padding: "3px 4px", textAlign: "left", fontWeight: 700, color: NAVY, borderBottom: `1px solid ${GRAY_BORDER}` }}>{h}</th>)}
-                      </tr></thead>
-                      <tbody>{units2.map((u, ui) => {
-                        const topName = u.topType ? (SHAPE_PRESETS.find(s=>s.code===u.topType)?.name || WINDOW_TYPES.find(t=>t.code===u.topType)?.name || u.topType) : "—";
-                        const botName = u.bottomType ? (WINDOW_TYPES.find(t=>t.code===u.bottomType)?.name || u.bottomType) : "—";
-                        const mainName = WINDOW_TYPES.find(t=>t.code===u.type)?.name || u.type;
-                        return (<tr key={u.id} style={{ borderBottom: "1px solid #eee" }}>
-                          <td style={{ padding: "3px 4px", fontWeight: 700, color: ORANGE }}>Unit {ui+1}</td>
-                          <td style={{ padding: "3px 4px" }}>{topName}</td>
-                          <td style={{ padding: "3px 4px" }}>{u.topType && u.topH ? `${u.topH}"` : "—"}</td>
-                          <td style={{ padding: "3px 4px", fontWeight: 600 }}>{mainName}</td>
-                          <td style={{ padding: "3px 4px" }}>{u.unitNetW ? `${u.unitNetW}"` : "—"}</td>
-                          <td style={{ padding: "3px 4px" }}>{u.unitNetH ? `${u.unitNetH}"` : "—"}</td>
-                          <td style={{ padding: "3px 4px" }}>{botName}</td>
-                          <td style={{ padding: "3px 4px" }}>{u.bottomType && u.bottomH ? `${u.bottomH}"` : "—"}</td>
-                        </tr>);
-                      })}</tbody>
-                    </table>
-                  </div>
-                );
-              })}
-            </div>
-          );
-        })()}
         {doors.length > 0 && (<div style={{ marginTop: 16 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: NAVY, marginBottom: 8, borderBottom: `2px solid ${ORANGE}`, paddingBottom: 4 }}>DOOR SELECTION</div>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 10 }}>
             <thead><tr style={{ background: NAVY, color: "#fff" }}>
-              {["#", "Location", "Type", "Qty", "Hand", "Op", sLbl.netW, sLbl.netH, "R.O. W", "R.O. H", "Glass Cfg", "Glass", "Jamb Thk", "Sidelites", "Threshold", "Screen", "Hardware", "Wrap", "Notes"].map((h, i) =>
+              {["#", "Location", "Type", "Qty", "Hand", "Op", sLbl.netW, sLbl.netH, "R.O. W", "R.O. H", "Glass Cfg", "Glass", "Jamb Thk", "Sidelites", "Threshold", "Screen", "Hardware", "Wrap", "Notes", ""].map((h, i) =>
                 <th key={i} style={{ padding: "5px 3px", textAlign: "left", fontWeight: 600, fontSize: 8, borderRight: "1px solid #1a5a7a", whiteSpace: "nowrap" }}>{h}</th>
               )}
             </tr></thead>
@@ -1520,7 +1548,8 @@ export default function App() {
               <td style={{ padding: "4px 3px" }}>{d.glassConfig}</td><td style={{ padding: "4px 3px" }}>{d.glass}{d.glassTexture !== "Clear" ? ` ${d.glassTexture}` : ""}</td>
               <td style={{ padding: "4px 3px" }}>{d.jambThickness}</td><td style={{ padding: "4px 3px" }}>{d.sidelites !== "None" ? `${d.sidelites}${d.sidelites === "Both" ? ` L:${d.sideliteWLeft||"?"}"/R:${d.sideliteWRight||"?"}"` : d.sideliteW ? ` ${d.sideliteW}"` : ""}` : ""}</td>
               <td style={{ padding: "4px 3px" }}>{d.threshold}</td><td style={{ padding: "4px 3px" }}>{d.doorScreen}</td>
-              <td style={{ padding: "4px 3px", fontSize: 9 }}>{d.hardwareColor} {d.hardwareType}</td><td style={{ padding: "4px 3px" }}>{d.doorWrap}</td><td style={{ padding: "4px 3px", fontSize: 9 }}>{d.notes}</td>
+              <td style={{ padding: "4px 3px", fontSize: 9 }}>{d.hardwareColor} {d.hardwareType}</td><td style={{ padding: "4px 3px" }}>{d.doorWrap}</td><td style={{ padding: "4px 3px", fontSize: 9 }}>{[d.notes, d.transom && d.transomH ? `Transom: ${d.transomH}"` : "", d.doorShape && d.doorShape !== "Square Top" ? `Shape: ${d.doorShape}${d.doorShapeNotes ? ` (${d.doorShapeNotes})` : ""}` : ""].filter(Boolean).join(" | ")}</td>
+              <td style={{ padding: "2px 3px", textAlign: "center" }}><DoorIcon type={d.type} sidelites={d.sidelites} transom={d.transom} glassConfig={d.glassConfig} handing={d.handing} operation={d.operation} /></td>
             </tr>)}</tbody>
           </table>
           {(parseFloat(doorMatSum.jLF) > 0 || parseFloat(doorMatSum.cLF) > 0 || parseFloat(doorMatSum.eLF) > 0) && (() => {
@@ -1531,13 +1560,135 @@ export default function App() {
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, fontSize: 11 }}>
                   {parseFloat(doorMatSum.jLF) > 0 && <div><strong>Jamb Ext:</strong> {doorMatSum.jLF} LF ({doorMatSum.jP} pcs)<br /><span style={{ color: "#555" }}>{[...new Set(doors.filter(d=>d.jamb).map(d=>{ const sz=d.jambSize==="Custom"?d.jambSizeCustom:d.jambSize; const col=d.jambFinish==="Stained"?(d.jambStainColor==="Custom"?d.jambStainCustom:d.jambStainColor):d.jambColor; return [sz,d.jambSpecies,d.jambFinish,col].filter(Boolean).join(" / "); }))].join(" | ") || "Specs TBD"}</span></div>}
                   {parseFloat(doorMatSum.cLF) > 0 && <div><strong>Int Casing:</strong> {doorMatSum.cLF} LF ({doorMatSum.cP} pcs)<br /><span style={{ color: "#555" }}>{[...new Set(doors.filter(d=>d.casing).map(d=>{ const col=d.casingFinish==="Stained"?(d.casingStainColor==="Custom"?d.casingStainCustom:d.casingStainColor):d.casingColor; return [d.casingSpecies,d.casingFinish,col].filter(Boolean).join(" / "); }))].join(" | ") || "Specs TBD"}</span></div>}
-                  {parseFloat(doorMatSum.eLF) > 0 && <div><strong>Ext Trim:</strong> {doorMatSum.eLF} LF{doorMatSum.slE ? ` — ${doorMatSum.slE}` : ""}<br />{(() => { const entries = [...new Map(doors.filter(d=>d.extTrim).map(d => { const b = d.extTrimBrand === "Custom" ? d.extTrimBrandCustom : d.extTrimBrand; const key = [b, d.extTrimSize, d.extTrimTexture, d.extTrimColor].filter(Boolean).join(" "); return [key, b]; })).entries()]; return entries.length ? entries.map(([desc, brand], i) => <span key={i}>{i > 0 && " | "}<span style={{ color: getTrimBrandColor(brand), fontWeight: 700 }}>{desc || "TBD"}</span></span>) : <span style={{ color: "#888" }}>Brand / type TBD</span>; })()}</div>}
-                  {wrapDoors.length > 0 && <div><strong>Door Wrap / Coil:</strong> {wrapDoors.map(d=>{ const wid=parseDim(d.netW||d.roughW),hgt=parseDim(d.netH||d.roughH),qty=parseInt(d.qty)||1; return wid&&hgt?((2*(wid+2)+(wid+2))/12*qty*WASTE_FACTOR):0; }).reduce((a,b)=>a+b,0).toFixed(1)} LF<br /><span style={{ color: "#555" }}>{[...new Set(wrapDoors.map(d=>[d.wrapTexture,d.wrapColor==="Custom"?d.wrapColorCustom:d.wrapColor].filter(Boolean).join(" ")))].join(" | ") || "Specs TBD"}</span></div>}
+                  {parseFloat(doorMatSum.eLF) > 0 && <div><strong>Ext Trim:</strong> {doorMatSum.eLF} LF{doorMatSum.slE ? ` — ${doorMatSum.slE}` : ""}<br />{(() => { const entries = [...new Map(doors.filter(d=>d.extTrim).map(d => { const b = d.extTrimBrand === "Custom" ? d.extTrimBrandCustom : d.extTrimBrand; const key = [b, d.extTrimSize, d.extTrimTexture, d.extTrimColor === "Custom" ? d.extTrimColorCustom || "Custom" : d.extTrimColor].filter(Boolean).join(" "); return [key, b]; })).entries()]; return entries.length ? entries.map(([desc, brand], i) => <span key={i}>{i > 0 && " | "}<span style={{ color: getTrimBrandColor(brand), fontWeight: 700 }}>{desc || "TBD"}</span></span>) : <span style={{ color: "#888" }}>Brand / type TBD</span>; })()}</div>}
+                  {wrapDoors.length > 0 && <div><strong>Door Metal Wrap:</strong> {wrapDoors.map(d=>{ const wid=parseDim(d.netW||d.roughW),hgt=parseDim(d.netH||d.roughH),qty=parseInt(d.qty)||1; return wid&&hgt?((2*(hgt+2)+(wid+2))/12*qty*WASTE_FACTOR):0; }).reduce((a,b)=>a+b,0).toFixed(1)} LF<br /><span style={{ color: "#555" }}>{[...new Set(wrapDoors.map(d=>[d.wrapTexture,d.wrapColor==="Custom"?d.wrapColorCustom:d.wrapColor].filter(Boolean).join(" ")))].join(" | ") || "Specs TBD"}</span></div>}
                 </div>
               </div>
             );
           })()}
         </div>)}
+        {/* ====== COMPREHENSIVE MATERIAL ORDER TABLES ====== */}
+        {wins.some(w => w.jamb || w.casing || w.extTrim || w.stools || w.wrapTrim) && (
+          <div style={{ marginTop: 20, pageBreakBefore: "auto" }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: NAVY, marginBottom: 8, borderBottom: `3px solid ${ORANGE}`, paddingBottom: 4 }}>WINDOW MATERIAL ORDER</div>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 9 }}>
+              <thead><tr style={{ background: NAVY, color: "#fff" }}>
+                {["#", "Location", "Qty", "Jamb Size", "Jamb Species", "Jamb Finish", "Jamb Color", "Jamb LF", "Jamb Pcs", "Casing Size", "Casing Species", "Casing Finish", "Casing Color", "Casing LF", "Casing Pcs", "Ext Trim Brand", "Ext Trim Size", "Ext Trim Color", "Ext Trim LF", "Stool Size", "Stool Len", "Wrap", "Wrap LF"].map((h, hi) =>
+                  <th key={hi} style={{ padding: "3px 2px", fontSize: 7, fontWeight: 600, whiteSpace: "nowrap", borderRight: "1px solid #1a5a7a" }}>{h}</th>
+                )}
+              </tr></thead>
+              <tbody>{wins.filter(w => w.jamb || w.casing || w.extTrim || w.stools || w.wrapTrim).map((w, ri) => {
+                const m = calcMaterials(getMullEffDims(w));
+                const jSz = w.jambSize === "Custom" ? w.jambSizeCustom : w.jambSize;
+                const jCol = w.jambFinish === "Stained" ? (w.jambStainColor === "Custom" ? w.jambStainCustom : w.jambStainColor) : w.jambColor;
+                const cSz = w.casingSize === "Custom" ? w.casingSizeCustom : w.casingSize;
+                const cCol = w.casingFinish === "Stained" ? (w.casingStainColor === "Custom" ? w.casingStainCustom : w.casingStainColor) : w.casingColor;
+                const extB = w.extTrimBrand === "Custom" ? w.extTrimBrandCustom : w.extTrimBrand;
+                const extCol = w.extTrimColor === "Custom" ? w.extTrimColorCustom : w.extTrimColor;
+                const stoolLen = parseDim(w.netW) ? (parseDim(w.netW) + 5).toFixed(0) : "";
+                const stoolSz = w.stoolSize === "Custom" ? w.stoolSizeCustom : w.stoolSize;
+                const wid = parseDim(w.netW || w.roughW), hgt = parseDim(w.netH || w.roughH), qty = parseInt(w.qty) || 1;
+                const wrapLF = w.wrapTrim && wid && hgt ? ((2*(wid+2)+2*(hgt+2))/12*qty*WASTE_FACTOR).toFixed(1) : "";
+                const wrapDesc = w.wrapTrim ? [w.wrapTexture, w.wrapColor === "Custom" ? w.wrapColorCustom : w.wrapColor].filter(Boolean).join(" ") : "";
+                const bg = ri % 2 === 0 ? "#fff" : "#f9fafb";
+                const td = { padding: "3px 2px", fontSize: 8, background: bg };
+                return (<tr key={w.id}>
+                  <td style={{ ...td, fontWeight: 600 }}>{wins.indexOf(w)+1}</td>
+                  <td style={td}>{w.location || `W${wins.indexOf(w)+1}`}</td>
+                  <td style={{ ...td, textAlign: "center" }}>{w.qty}</td>
+                  <td style={td}>{w.jamb ? jSz || "" : "—"}</td>
+                  <td style={td}>{w.jamb ? w.jambSpecies || "" : ""}</td>
+                  <td style={td}>{w.jamb ? w.jambFinish || "" : ""}</td>
+                  <td style={td}>{w.jamb ? jCol || "" : ""}</td>
+                  <td style={{ ...td, fontWeight: 600 }}>{w.jamb && m ? m.jambLF : ""}</td>
+                  <td style={td}>{w.jamb && m ? m.jambPcs : ""}</td>
+                  <td style={td}>{w.casing ? cSz || "" : "—"}</td>
+                  <td style={td}>{w.casing ? w.casingSpecies || "" : ""}</td>
+                  <td style={td}>{w.casing ? w.casingFinish || "" : ""}</td>
+                  <td style={td}>{w.casing ? cCol || "" : ""}</td>
+                  <td style={{ ...td, fontWeight: 600 }}>{w.casing && m ? m.casingLF : ""}</td>
+                  <td style={td}>{w.casing && m ? m.casingPcs : ""}</td>
+                  <td style={{ ...td, color: w.extTrim ? getTrimBrandColor(w.extTrimBrand) : undefined, fontWeight: w.extTrim ? 700 : 400 }}>{w.extTrim ? extB || "" : "—"}</td>
+                  <td style={td}>{w.extTrim ? w.extTrimSize || "" : ""}</td>
+                  <td style={td}>{w.extTrim ? extCol || "" : ""}</td>
+                  <td style={{ ...td, fontWeight: 600 }}>{w.extTrim && m ? m.extLF : ""}</td>
+                  <td style={td}>{w.stools ? stoolSz || "" : "—"}</td>
+                  <td style={td}>{w.stools && stoolLen ? `${stoolLen}"` : ""}</td>
+                  <td style={td}>{wrapDesc || (w.wrapTrim ? "Wrap" : "—")}</td>
+                  <td style={{ ...td, fontWeight: 600 }}>{wrapLF}</td>
+                </tr>);
+              })}</tbody>
+              <tfoot><tr style={{ background: NAVY, color: "#fff", fontWeight: 700, fontSize: 8 }}>
+                <td colSpan="7" style={{ padding: "4px 3px" }}>TOTALS</td>
+                <td style={{ padding: "4px 2px" }}>{matSum.jLF} LF</td><td style={{ padding: "4px 2px" }}>{matSum.jP}</td>
+                <td colSpan="4" />
+                <td style={{ padding: "4px 2px" }}>{matSum.cLF} LF</td><td style={{ padding: "4px 2px" }}>{matSum.cP}</td>
+                <td colSpan="3" />
+                <td style={{ padding: "4px 2px" }}>{matSum.eLF} LF</td>
+                <td colSpan="4" />
+              </tr></tfoot>
+            </table>
+          </div>
+        )}
+        {doors.some(d => d.jamb || d.casing || d.extTrim || d.wrapTrim) && (
+          <div style={{ marginTop: 16 }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: NAVY, marginBottom: 8, borderBottom: `3px solid ${ORANGE}`, paddingBottom: 4 }}>DOOR MATERIAL ORDER</div>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 9 }}>
+              <thead><tr style={{ background: NAVY, color: "#fff" }}>
+                {["#", "Location", "Type", "Qty", "Jamb Size", "Species", "Finish", "Color", "Jamb LF", "Pcs", "Casing Size", "Species", "Finish", "Color", "Casing LF", "Pcs", "Ext Trim Brand", "Size", "Color", "Ext Trim LF", "Wrap", "Wrap LF"].map((h, hi) =>
+                  <th key={hi} style={{ padding: "3px 2px", fontSize: 7, fontWeight: 600, whiteSpace: "nowrap", borderRight: "1px solid #1a5a7a" }}>{h}</th>
+                )}
+              </tr></thead>
+              <tbody>{doors.filter(d => d.jamb || d.casing || d.extTrim || d.wrapTrim).map((d, ri) => {
+                const m = calcDoorMaterials(d);
+                const jSz = d.jambSize === "Custom" ? d.jambSizeCustom : d.jambSize;
+                const jCol = d.jambFinish === "Stained" ? (d.jambStainColor === "Custom" ? d.jambStainCustom : d.jambStainColor) : d.jambColor;
+                const cSz = d.casingSize === "Custom" ? d.casingSizeCustom : d.casingSize;
+                const cCol = d.casingFinish === "Stained" ? (d.casingStainColor === "Custom" ? d.casingStainCustom : d.casingStainColor) : d.casingColor;
+                const extB = d.extTrimBrand === "Custom" ? d.extTrimBrandCustom : d.extTrimBrand;
+                const extCol = d.extTrimColor === "Custom" ? d.extTrimColorCustom : d.extTrimColor;
+                const wid = parseDim(d.netW || d.roughW), hgt = parseDim(d.netH || d.roughH), qty = parseInt(d.qty) || 1;
+                const wrapLF = d.wrapTrim && wid && hgt ? ((2*(hgt+2)+(wid+2))/12*qty*WASTE_FACTOR).toFixed(1) : "";
+                const wrapDesc = d.wrapTrim ? [d.wrapTexture, d.wrapColor === "Custom" ? d.wrapColorCustom : d.wrapColor].filter(Boolean).join(" ") : "";
+                const bg = ri % 2 === 0 ? "#fff" : "#f9fafb";
+                const td = { padding: "3px 2px", fontSize: 8, background: bg };
+                return (<tr key={d.id}>
+                  <td style={{ ...td, fontWeight: 600 }}>{doors.indexOf(d)+1}</td>
+                  <td style={td}>{d.location}</td>
+                  <td style={td}>{d.type}</td>
+                  <td style={{ ...td, textAlign: "center" }}>{d.qty}</td>
+                  <td style={td}>{d.jamb ? jSz || "" : "—"}</td>
+                  <td style={td}>{d.jamb ? d.jambSpecies || "" : ""}</td>
+                  <td style={td}>{d.jamb ? d.jambFinish || "" : ""}</td>
+                  <td style={td}>{d.jamb ? jCol || "" : ""}</td>
+                  <td style={{ ...td, fontWeight: 600 }}>{d.jamb && m ? m.jambLF : ""}</td>
+                  <td style={td}>{d.jamb && m ? m.jambPcs : ""}</td>
+                  <td style={td}>{d.casing ? cSz || "" : "—"}</td>
+                  <td style={td}>{d.casing ? d.casingSpecies || "" : ""}</td>
+                  <td style={td}>{d.casing ? d.casingFinish || "" : ""}</td>
+                  <td style={td}>{d.casing ? cCol || "" : ""}</td>
+                  <td style={{ ...td, fontWeight: 600 }}>{d.casing && m ? m.casingLF : ""}</td>
+                  <td style={td}>{d.casing && m ? m.casingPcs : ""}</td>
+                  <td style={{ ...td, color: d.extTrim ? getTrimBrandColor(d.extTrimBrand) : undefined, fontWeight: d.extTrim ? 700 : 400 }}>{d.extTrim ? extB || "" : "—"}</td>
+                  <td style={td}>{d.extTrim ? d.extTrimSize || "" : ""}</td>
+                  <td style={td}>{d.extTrim ? extCol || "" : ""}</td>
+                  <td style={{ ...td, fontWeight: 600 }}>{d.extTrim && m ? m.extLF : ""}</td>
+                  <td style={td}>{wrapDesc || (d.wrapTrim ? "Wrap" : "—")}</td>
+                  <td style={{ ...td, fontWeight: 600 }}>{wrapLF}</td>
+                </tr>);
+              })}</tbody>
+              <tfoot><tr style={{ background: NAVY, color: "#fff", fontWeight: 700, fontSize: 8 }}>
+                <td colSpan="8" style={{ padding: "4px 3px" }}>TOTALS</td>
+                <td style={{ padding: "4px 2px" }}>{doorMatSum.jLF} LF</td><td style={{ padding: "4px 2px" }}>{doorMatSum.jP}</td>
+                <td colSpan="4" />
+                <td style={{ padding: "4px 2px" }}>{doorMatSum.cLF} LF</td><td style={{ padding: "4px 2px" }}>{doorMatSum.cP}</td>
+                <td colSpan="3" />
+                <td style={{ padding: "4px 2px" }}>{doorMatSum.eLF} LF</td>
+                <td colSpan="2" />
+              </tr></tfoot>
+            </table>
+          </div>
+        )}
       </div>
       <style>{"@media print{[data-noprint]{display:none!important;}body{margin:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}table{page-break-inside:auto;}tr{page-break-inside:avoid;}}"}</style>
     </div>
@@ -1573,15 +1724,18 @@ export default function App() {
         <div style={{ background: "#fff", borderRadius: 10, padding: 14, marginBottom: 10, boxShadow: "0 1px 3px rgba(0,0,0,0.08)" }}>
           <div onClick={() => setHdrOpen(!hdrOpen)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}><div style={sec}>Project Details</div><span style={{ fontSize: 16, color: NAVY }}>{hdrOpen ? "v" : ">"}</span></div>
           {hdrOpen && <>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 10 }}>
               <div><label style={lbl}>Customer</label><input style={inp} value={proj.customer} onChange={e => up("customer", e.target.value)} placeholder="Customer name" /></div>
+              <div><label style={lbl}>Rep / Salesperson</label><input style={inp} value={proj.repName || ""} onChange={e => up("repName", e.target.value)} placeholder="Rep name" /></div>
               <div><label style={lbl}>Date</label><input style={inp} type="date" value={proj.date} onChange={e => up("date", e.target.value)} /></div>
             </div>
             <div style={{ marginTop: 10 }}><label style={lbl}>Street Address</label><input style={inp} value={proj.address} onChange={e => up("address", e.target.value)} placeholder="Street address" /></div>
-            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 10, marginTop: 8 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1.5fr 1.5fr", gap: 10, marginTop: 8 }}>
               <div><label style={lbl}>City</label><input style={inp} value={proj.city || ""} onChange={e => up("city", e.target.value)} placeholder="City" /></div>
               <div><label style={lbl}>State</label><input style={inp} value={proj.state || ""} onChange={e => up("state", e.target.value)} placeholder="IL" maxLength={2} /></div>
               <div><label style={lbl}>ZIP Code</label><input style={inp} value={proj.zip || ""} onChange={e => up("zip", e.target.value)} placeholder="60601" /></div>
+              <div><label style={lbl}>Phone</label><input style={inp} type="tel" value={proj.phone || ""} onChange={e => up("phone", e.target.value)} placeholder="(319) 555-0123" /></div>
+              <div><label style={lbl}>Email</label><input style={inp} type="email" value={proj.email || ""} onChange={e => up("email", e.target.value)} placeholder="customer@email.com" /></div>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 10, marginTop: 14 }}>
               <div><label style={lbl}>Install Type</label><select style={sel} value={proj.installType} onChange={e => up("installType", e.target.value)}>{INSTALL_TYPES.map(t => <option key={t}>{t}</option>)}</select></div>
@@ -1598,7 +1752,7 @@ export default function App() {
                       <option value="">-- Select --</option>
                       {BRAND_SERIES[proj.brand].map(s => <option key={s}>{s}</option>)}
                     </select>
-                    {proj.series === "Custom" && <input style={{ ...inp, marginTop: 4, fontSize: 12 }} value={proj.brandCustom} onChange={e => up("brandCustom", e.target.value)} placeholder="Custom series..." />}
+                    {proj.series === "Custom" && <input style={{ ...inp, marginTop: 4, fontSize: 12 }} value={proj.seriesCustom || ""} onChange={e => up("seriesCustom", e.target.value)} placeholder="Custom series..." />}
                   </>
                 ) : (
                   <input style={inp} value={proj.series} onChange={e => up("series", e.target.value)} placeholder="250, 400..." />
@@ -1636,7 +1790,7 @@ export default function App() {
                         <option value="">-- Select --</option>
                         {BRAND_SERIES[proj.brand2].map(s => <option key={s}>{s}</option>)}
                       </select>
-                      {proj.series2 === "Custom" && <input style={{ ...inp, marginTop: 4, fontSize: 12 }} value={proj.brandCustom2} onChange={e => up("brandCustom2", e.target.value)} placeholder="Custom series..." />}
+                      {proj.series2 === "Custom" && <input style={{ ...inp, marginTop: 4, fontSize: 12 }} value={proj.seriesCustom2 || ""} onChange={e => up("seriesCustom2", e.target.value)} placeholder="Custom series..." />}
                     </>
                   ) : (
                     <input style={inp} value={proj.series2 || ""} onChange={e => up("series2", e.target.value)} placeholder="Series / model..." />
@@ -1766,10 +1920,11 @@ export default function App() {
               <div><label style={lbl}>Integrated J-Channel</label><select style={sel} value={proj.jChannel} onChange={e => up("jChannel", e.target.value)}><option value="">-- Select --</option><option>Yes</option><option>No</option></select></div>
             </div>
             <div style={{ marginTop: 10 }}><label style={lbl}>Special Color</label><input style={inp} value={proj.specialColor} onChange={e => up("specialColor", e.target.value)} placeholder="Black exterior on front only" /></div>
+            <div style={{ marginTop: 10 }}><label style={lbl}>Project Notes</label><textarea style={{ ...inp, minHeight: 50 }} value={proj.projectNotes || ""} onChange={e => up("projectNotes", e.target.value)} placeholder="General notes about this project..." /></div>
           </>}
         </div>
 
-        <div style={{ ...sec, marginBottom: 6, display: "flex", justifyContent: "space-between", alignItems: "center" }}><span>Windows ({wins.filter(w => !w.mullMode).length})</span><div style={{ display: "flex", gap: 12, fontSize: 13, fontWeight: 600 }}><span style={{ color: NAVY }}>QTY: {tQty}</span><span style={{ color: ORANGE }}>PCS: {tPcs}</span></div></div>
+        <div style={{ ...sec, marginBottom: 6, display: "flex", justifyContent: "space-between", alignItems: "center" }}><span>Windows ({wins.filter(w => !w.mullMode).length})</span><div style={{ display: "flex", gap: 12, fontSize: 13, fontWeight: 600, alignItems: "center" }}><span style={{ color: NAVY }}>QTY: {tQty}</span><span style={{ color: ORANGE }}>PCS: {tPcs}</span><button onClick={() => { const allExpanded = wins.filter(w => !w.mullMode).every(w => w.expanded); setWins(ws => ws.map(w => w.mullMode ? w : { ...w, expanded: !allExpanded })); }} style={{ fontSize: 10, padding: "3px 8px", background: "transparent", color: NAVY, border: `1px solid ${NAVY}40`, borderRadius: 4, cursor: "pointer", fontWeight: 600 }}>{wins.filter(w => !w.mullMode).every(w => w.expanded) ? "Collapse All" : "Expand All"}</button></div></div>
         {wins.filter(w => !w.mullMode).map((w, idx) => { const mats = calcMaterials(getMullEffDims(w)); const isBayBow = w.type === "BAY" || w.type === "BOW";
           const wBrand = w.winLine === "2" ? (proj.brand2 || "") : proj.brand;
           const wSeries = w.winLine === "2" ? (proj.series2 || "") : proj.series;
@@ -1932,12 +2087,6 @@ export default function App() {
                 if (!netH || total === netH) return null;
                 return <div style={{ fontSize: 10, color: NAVY, padding: "3px 8px", background: `${NAVY}10`, borderRadius: 4, fontWeight: 700, marginTop: 4, display: "inline-block" }}>Total unit height: {total}"  ({[w.netH && `Win ${w.netH}"`, w.hasTransom && w.transomH && `+ Trnsm ${w.transomH}"`, w.hasBottomLight && w.bottomLightH && `+ Bot Lite ${w.bottomLightH}"`].filter(Boolean).join(" ")})</div>;
               })()}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginTop: 8 }}>
-                <div><label style={lbl}>Metal Roll</label><select style={sel} value={w.metalRoll} onChange={e => uw(w.id, "metalRoll", e.target.value)}>{METAL_OPTIONS.map(m => <option key={m} value={m}>{m || "-- None --"}</option>)}</select></div>
-                <div><label style={lbl}>Metal Color</label><select style={sel} value={w.metalColor} onChange={e => uw(w.id, "metalColor", e.target.value)}>{METAL_COLORS.map(c => <option key={c} value={c}>{c || "--"}</option>)}</select></div>
-                <div><label style={lbl}>Win Wrap</label><select style={sel} value={w.winWrap} onChange={e => uw(w.id, "winWrap", e.target.value)}>{WIN_WRAP_SIZES.map(s => <option key={s} value={s}>{s || "-- None --"}</option>)}</select></div>
-                <div />
-              </div>
               <div style={{ marginTop: 8 }}><label style={lbl}>Notes</label><input style={inp} value={w.notes} onChange={e => uw(w.id, "notes", e.target.value)} placeholder="Additional notes..." /></div>
               {w.type === "SHAPE" && <ShapeCanvas win={w} onChange={(f, v) => uw(w.id, f, v)} />}
               {isBayBow && <BayBowConfig win={w} onChange={(f, v) => uw(w.id, f, v)} />}
@@ -2025,7 +2174,7 @@ export default function App() {
                 const wrapColorDisplay = w.wrapColor === "Custom" ? w.wrapColorCustom : w.wrapColor;
                 return (
                   <div style={{ marginTop: 6, padding: "8px 10px", background: `${NAVY}08`, border: `1px solid ${NAVY}25`, borderRadius: 8 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: NAVY, marginBottom: 6 }}>METAL WRAP / COIL{wrapLF ? ` — ${wrapLF} LF, ${wrapPcs} pcs` : ""}</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: NAVY, marginBottom: 6 }}>METAL WRAP{wrapLF ? ` — ${wrapLF} LF, ${wrapPcs} pcs` : ""}</div>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 }}>
                       <div><label style={lbl}>Texture</label><select style={sel} value={w.wrapTexture} onChange={e => uw(w.id, "wrapTexture", e.target.value)}><option value="">-- Select --</option><option>Smooth</option><option>Textured</option></select></div>
                       <div>
@@ -2055,7 +2204,17 @@ export default function App() {
                     </div>
                     <div><label style={lbl}>Size</label><select style={sel} value={w.extTrimSize} onChange={e => uw(w.id, "extTrimSize", e.target.value)}>{EXT_TRIM_SIZES.map(s => <option key={s} value={s}>{s || "-- Select --"}</option>)}</select></div>
                     <div><label style={lbl}>Texture</label><select style={sel} value={w.extTrimTexture} onChange={e => uw(w.id, "extTrimTexture", e.target.value)}>{EXT_TRIM_TEXTURES.map(t => <option key={t} value={t}>{t || "-- Select --"}</option>)}</select></div>
-                    <div><label style={lbl}>Color</label><input style={inp} value={w.extTrimColor || ""} onChange={e => uw(w.id, "extTrimColor", e.target.value)} placeholder="White, Cream..." /></div>
+                    <div>
+                      <label style={lbl}>Color</label>
+                      {(() => { const colors = getExtTrimColors(w.extTrimBrand); const isCustom = w.extTrimColor === "Custom"; return (<>
+                        <select style={sel} value={w.extTrimColor || ""} onChange={e => uw(w.id, "extTrimColor", e.target.value)}>
+                          <option value="">-- Select --</option>
+                          {colors.map(c => <option key={c} value={c}>{c}</option>)}
+                          {w.extTrimColor && !colors.includes(w.extTrimColor) && w.extTrimColor !== "" && <option value={w.extTrimColor}>{w.extTrimColor}</option>}
+                        </select>
+                        {isCustom && <input style={{ ...inp, marginTop: 4, fontSize: 12 }} value={w.extTrimColorCustom || ""} onChange={e => uw(w.id, "extTrimColorCustom", e.target.value)} placeholder="Custom color..." />}
+                      </>); })()}
+                    </div>
                   </div>
                   {mats && <div style={{ fontSize: 11, color: "#666", marginTop: 4 }}>{mats.extLF} LF — {mats.extDetail}</div>}
                 </div>
@@ -2077,7 +2236,7 @@ export default function App() {
                     <div style={{ fontWeight: 700, color: GREEN, marginBottom: 4, fontSize: 12 }}>Material Calc ({mats.width}" x {mats.height}" x {w.qty})</div>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
                       {w.jamb && <div><strong>Jamb{jSize ? ` (${jSize})` : ""}:</strong> {mats.jambLF} LF | {mats.jambPcs} pcs{[w.jambSpecies, w.jambFinish, jCol].filter(Boolean).length ? <span style={{ color: NAVY }}> — {[w.jambSpecies, w.jambFinish, jCol].filter(Boolean).join(" / ")}</span> : ""}<br /><span style={{ color: "#666" }}>{mats.jambDetail}</span></div>}
-                      {w.casing && <div><strong>Casing:</strong> {mats.casingLF} LF | {mats.casingPcs} pcs{[w.casingSpecies, w.casingFinish, cCol].filter(Boolean).length ? <span style={{ color: NAVY }}> — {[w.casingSpecies, w.casingFinish, cCol].filter(Boolean).join(" / ")}</span> : ""}<br /><span style={{ color: "#666" }}>{mats.casingDetail}</span></div>}
+                      {w.casing && <div><strong>Casing{w.casingSize ? ` (${w.casingSize === "Custom" ? w.casingSizeCustom : w.casingSize})` : ""}:</strong> {mats.casingLF} LF | {mats.casingPcs} pcs{[w.casingSpecies, w.casingFinish, cCol].filter(Boolean).length ? <span style={{ color: NAVY }}> — {[w.casingSpecies, w.casingFinish, cCol].filter(Boolean).join(" / ")}</span> : ""}<br /><span style={{ color: "#666" }}>{mats.casingDetail}</span></div>}
                       {w.extTrim && <div><strong>Ext Trim{w.extTrimSize ? ` (${w.extTrimSize}${w.extTrimTexture ? ` ${w.extTrimTexture}` : ""})` : ""}:</strong> {mats.extLF} LF{extBrand ? <span style={{ color: getTrimBrandColor(w.extTrimBrand === "Custom" ? "Custom" : w.extTrimBrand), fontWeight: 700 }}> — {extBrand}</span> : ""}{w.extTrimColor ? <span style={{ color: "#555" }}> / {w.extTrimColor}</span> : ""}<br /><span style={{ color: "#666" }}>{mats.extDetail}</span></div>}
                       {w.stools && stoolLen && <div><strong>Stool{effStoolSize ? ` (${effStoolSize})` : ""}:</strong> {stoolLen}" x {w.qty} pc{parseInt(w.qty) > 1 ? "s" : ""}{stoolColorDisplay ? <span style={{ color: NAVY }}> — {stoolColorDisplay}</span> : ""}</div>}
                       {w.wrapTrim && wrapLF && <div><strong>Metal Wrap:</strong> {wrapLF} LF | {wrapPcs} pcs{w.wrapTexture ? <span style={{ color: "#666" }}> ({w.wrapTexture})</span> : ""}{wrapColorDisplay ? <span style={{ color: NAVY }}> — {wrapColorDisplay}</span> : ""}</div>}
@@ -2127,12 +2286,61 @@ export default function App() {
                     <div><label style={lbl}>Location / Label</label><input style={inp} value={w.location} onChange={e => uw(w.id, "location", e.target.value)} placeholder="e.g. Living Room Bay" /></div>
                     <div><label style={lbl}>Qty</label><input style={inp} type="number" value={w.qty} onChange={e => uw(w.id, "qty", e.target.value)} min="1" /></div>
                   </div>
-                  <CompositeConfig win={w} onChange={(f, v) => uw(w.id, f, v)} />
+                  <CompositeConfig win={w} onChange={(f, v) => uw(w.id, f, v)} brand={proj.brand} series={proj.series} />
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 14, marginTop: 10, padding: "8px 10px", background: GRAY_BG, borderRadius: 8 }}>
-                    {[["casing", "Casing"], ["jamb", "Jamb Ext"], ["wrapTrim", "Wrap"], ["extTrim", "Exterior Trim"]].map(([f, l]) =>
+                    {[["casing", "Casing"], ["jamb", "Jamb Ext"], ["wrapTrim", "Metal Wrap"], ["extTrim", "Exterior Trim"]].map(([f, l]) =>
                       <label key={f} style={chk}><input type="checkbox" checked={w[f]} onChange={e => uw(w.id, f, e.target.checked)} style={{ width: 20, height: 20, accentColor: ORANGE }} />{l}</label>
                     )}
                   </div>
+                  {w.jamb && (
+                    <div style={{ marginTop: 6, padding: "8px 10px", background: `${NAVY}06`, border: `1px solid ${NAVY}25`, borderRadius: 8 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: NAVY, marginBottom: 6 }}>JAMB EXTENSION</div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 }}>
+                        <div><label style={lbl}>Jamb Size</label><select style={sel} value={w.jambSize} onChange={e => uw(w.id, "jambSize", e.target.value)}><option value="">-- Select --</option>{JAMB_SIZES.map(s => <option key={s}>{s}</option>)}</select>{w.jambSize === "Custom" && <input style={{ ...inp, marginTop: 4, fontSize: 12 }} value={w.jambSizeCustom} onChange={e => uw(w.id, "jambSizeCustom", e.target.value)} placeholder='e.g. 5/8"x5"' />}</div>
+                        <div><label style={lbl}>Species</label><select style={sel} value={w.jambSpecies} onChange={e => uw(w.id, "jambSpecies", e.target.value)}>{JAMB_SPECIES.map(s => <option key={s} value={s}>{s || "-- Select --"}</option>)}</select></div>
+                        <div><label style={lbl}>Finish</label><select style={sel} value={w.jambFinish} onChange={e => uw(w.id, "jambFinish", e.target.value)}>{FINISH_TYPES.map(f => <option key={f} value={f}>{f || "-- Select --"}</option>)}</select></div>
+                        {w.jambFinish === "Stained" ? <div><label style={lbl}>Stain Color</label><select style={sel} value={w.jambStainColor} onChange={e => uw(w.id, "jambStainColor", e.target.value)}>{STAIN_COLORS.map(c => <option key={c} value={c}>{c || "-- Select --"}</option>)}</select>{w.jambStainColor === "Custom" && <input style={{ ...inp, marginTop: 4, fontSize: 12 }} value={w.jambStainCustom || ""} onChange={e => uw(w.id, "jambStainCustom", e.target.value)} placeholder="Custom stain..." />}</div> : <div><label style={lbl}>Paint Color</label><input style={inp} value={w.jambColor} onChange={e => uw(w.id, "jambColor", e.target.value)} placeholder="White" /></div>}
+                      </div>
+                      {mats && <div style={{ fontSize: 11, color: NAVY, marginTop: 4 }}>{mats.jambLF} LF | {mats.jambPcs} pcs — <span style={{ color: "#666" }}>{mats.jambDetail}</span></div>}
+                    </div>
+                  )}
+                  {w.casing && (
+                    <div style={{ marginTop: 6, padding: "8px 10px", background: `${GREEN}06`, border: `1px solid ${GREEN}25`, borderRadius: 8 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: GREEN, marginBottom: 6 }}>INTERIOR CASING</div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 }}>
+                        <div><label style={lbl}>Casing Size</label><select style={sel} value={w.casingSize} onChange={e => uw(w.id, "casingSize", e.target.value)}>{CASING_SIZES.map(s => <option key={s} value={s}>{s || "-- Select --"}</option>)}</select>{w.casingSize === "Custom" && <input style={{ ...inp, marginTop: 4, fontSize: 12 }} value={w.casingSizeCustom || ""} onChange={e => uw(w.id, "casingSizeCustom", e.target.value)} placeholder='e.g. 4-1/2"' />}</div>
+                        <div><label style={lbl}>Species</label><select style={sel} value={w.casingSpecies} onChange={e => uw(w.id, "casingSpecies", e.target.value)}>{JAMB_SPECIES.map(s => <option key={s} value={s}>{s || "-- Select --"}</option>)}</select></div>
+                        <div><label style={lbl}>Finish</label><select style={sel} value={w.casingFinish} onChange={e => uw(w.id, "casingFinish", e.target.value)}>{FINISH_TYPES.map(f => <option key={f} value={f}>{f || "-- Select --"}</option>)}</select></div>
+                        {w.casingFinish === "Stained" ? <div><label style={lbl}>Stain Color</label><select style={sel} value={w.casingStainColor} onChange={e => uw(w.id, "casingStainColor", e.target.value)}>{STAIN_COLORS.map(c => <option key={c} value={c}>{c || "-- Select --"}</option>)}</select>{w.casingStainColor === "Custom" && <input style={{ ...inp, marginTop: 4, fontSize: 12 }} value={w.casingStainCustom || ""} onChange={e => uw(w.id, "casingStainCustom", e.target.value)} placeholder="Custom stain..." />}</div> : <div><label style={lbl}>Paint Color</label><input style={inp} value={w.casingColor} onChange={e => uw(w.id, "casingColor", e.target.value)} placeholder="White" /></div>}
+                      </div>
+                      {mats && <div style={{ fontSize: 11, color: GREEN, marginTop: 4 }}>{mats.casingLF} LF | {mats.casingPcs} pcs — <span style={{ color: "#666" }}>{mats.casingDetail}</span></div>}
+                    </div>
+                  )}
+                  {w.wrapTrim && (() => {
+                    const wid = parseDim(w.netW || w.roughW || w.mullOverallW), hgt = parseDim(w.netH || w.roughH || w.mullOverallH), qty = parseInt(w.qty) || 1;
+                    const wrapLF = wid && hgt ? ((2*(wid+2)+2*(hgt+2))/12*qty*WASTE_FACTOR).toFixed(1) : null;
+                    return (
+                      <div style={{ marginTop: 6, padding: "8px 10px", background: `${NAVY}08`, border: `1px solid ${NAVY}25`, borderRadius: 8 }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: NAVY, marginBottom: 6 }}>METAL WRAP{wrapLF ? ` — ${wrapLF} LF` : ""}</div>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                          <div><label style={lbl}>Texture</label><select style={sel} value={w.wrapTexture} onChange={e => uw(w.id, "wrapTexture", e.target.value)}><option value="">-- Select --</option><option>Smooth</option><option>Textured</option></select></div>
+                          <div><label style={lbl}>Color</label><select style={sel} value={w.wrapColor} onChange={e => uw(w.id, "wrapColor", e.target.value)}>{METAL_COLORS.map(c => <option key={c} value={c}>{c || "-- Select --"}</option>)}</select>{w.wrapColor === "Custom" && <input style={{ ...inp, marginTop: 4, fontSize: 12 }} value={w.wrapColorCustom || ""} onChange={e => uw(w.id, "wrapColorCustom", e.target.value)} placeholder="Custom color..." />}</div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                  {w.extTrim && (
+                    <div style={{ marginTop: 6, padding: "8px 10px", background: `${ORANGE}06`, border: `1px solid ${ORANGE}25`, borderRadius: 8 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: ORANGE, marginBottom: 6 }}>EXTERIOR TRIM</div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 }}>
+                        <div><label style={lbl}>Brand</label><select style={{ ...sel, borderColor: w.extTrimBrand ? getTrimBrandColor(w.extTrimBrand) : GRAY_BORDER, borderWidth: w.extTrimBrand ? 2 : 1 }} value={w.extTrimBrand} onChange={e => uw(w.id, "extTrimBrand", e.target.value)}><option value="">-- Select --</option>{EXT_TRIM_BRANDS.map(b => <option key={b}>{b}</option>)}</select>{w.extTrimBrand === "Custom" && <input style={{ ...inp, marginTop: 4, fontSize: 12 }} value={w.extTrimBrandCustom || ""} onChange={e => uw(w.id, "extTrimBrandCustom", e.target.value)} placeholder="Brand name..." />}</div>
+                        <div><label style={lbl}>Size</label><select style={sel} value={w.extTrimSize} onChange={e => uw(w.id, "extTrimSize", e.target.value)}>{EXT_TRIM_SIZES.map(s => <option key={s} value={s}>{s || "-- Select --"}</option>)}</select></div>
+                        <div><label style={lbl}>Texture</label><select style={sel} value={w.extTrimTexture} onChange={e => uw(w.id, "extTrimTexture", e.target.value)}>{EXT_TRIM_TEXTURES.map(t => <option key={t} value={t}>{t || "-- Select --"}</option>)}</select></div>
+                        <div><label style={lbl}>Color</label>{(() => { const colors = getExtTrimColors(w.extTrimBrand); const isCustom = w.extTrimColor === "Custom"; return (<><select style={sel} value={w.extTrimColor || ""} onChange={e => uw(w.id, "extTrimColor", e.target.value)}><option value="">-- Select --</option>{colors.map(c => <option key={c} value={c}>{c}</option>)}{w.extTrimColor && !colors.includes(w.extTrimColor) && <option value={w.extTrimColor}>{w.extTrimColor}</option>}</select>{isCustom && <input style={{ ...inp, marginTop: 4, fontSize: 12 }} value={w.extTrimColorCustom || ""} onChange={e => uw(w.id, "extTrimColorCustom", e.target.value)} placeholder="Custom color..." />}</>); })()}</div>
+                      </div>
+                      {mats && <div style={{ fontSize: 11, color: "#666", marginTop: 4 }}>{mats.extLF} LF — {mats.extDetail}</div>}
+                    </div>
+                  )}
                   <div style={{ display: "flex", gap: 6, marginTop: 10, justifyContent: "flex-end" }}>
                     {idx > 0 && <button onClick={e => { e.stopPropagation(); moveWin(w.id, -1); }} style={{ ...bS, padding: "5px 8px", fontSize: 14 }}>↑</button>}
                     {idx < wins.filter(w2 => w2.mullMode).length - 1 && <button onClick={e => { e.stopPropagation(); moveWin(w.id, 1); }} style={{ ...bS, padding: "5px 8px", fontSize: 14 }}>↓</button>}
@@ -2148,7 +2356,7 @@ export default function App() {
 
         {/* ===== END MULLED ASSEMBLIES ===== */}
 
-        <div style={{ ...sec, marginTop: 16, marginBottom: 6, display: "flex", justifyContent: "space-between", alignItems: "center" }}><span>Doors ({doors.length})</span>{doors.length > 0 && <div style={{ display: "flex", gap: 12, fontSize: 13, fontWeight: 600 }}><span style={{ color: "#666" }}>QTY: {doors.reduce((s, d) => s + (parseInt(d.qty) || 0), 0)}</span></div>}</div>
+        <div style={{ ...sec, marginTop: 16, marginBottom: 6, display: "flex", justifyContent: "space-between", alignItems: "center" }}><span>Doors ({doors.length})</span>{doors.length > 0 && <div style={{ display: "flex", gap: 12, fontSize: 13, fontWeight: 600, alignItems: "center" }}><span style={{ color: "#666" }}>QTY: {doors.reduce((s, d) => s + (parseInt(d.qty) || 0), 0)}</span><button onClick={() => { const allExpanded = doors.every(d => d.expanded); setDoors(ds => ds.map(d => ({ ...d, expanded: !allExpanded }))); }} style={{ fontSize: 10, padding: "3px 8px", background: "transparent", color: NAVY, border: `1px solid ${NAVY}40`, borderRadius: 4, cursor: "pointer", fontWeight: 600 }}>{doors.every(d => d.expanded) ? "Collapse All" : "Expand All"}</button></div>}</div>
         {/* Door Info Card — brand, series, colors */}
         <div style={{ background: "#fff", borderRadius: 10, padding: 14, marginBottom: 8, boxShadow: "0 1px 3px rgba(0,0,0,0.08)", border: `1px solid ${NAVY}15` }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: NAVY, marginBottom: 10, textTransform: "uppercase", letterSpacing: 0.5 }}>Door Selection Info</div>
@@ -2169,7 +2377,7 @@ export default function App() {
                     <option value="">-- Select --</option>
                     {DOOR_BRAND_SERIES[proj.doorBrand].map(s => <option key={s}>{s}</option>)}
                   </select>
-                  {proj.doorSeries === "Custom" && <input style={{ ...inp, marginTop: 4, fontSize: 12 }} value={proj.doorBrandCustom} onChange={e => up("doorBrandCustom", e.target.value)} placeholder="Custom series..." />}
+                  {proj.doorSeries === "Custom" && <input style={{ ...inp, marginTop: 4, fontSize: 12 }} value={proj.doorSeriesCustom || ""} onChange={e => up("doorSeriesCustom", e.target.value)} placeholder="Custom series..." />}
                 </>
               ) : (
                 <input style={inp} value={proj.doorSeries} onChange={e => up("doorSeries", e.target.value)} placeholder="Series / model..." />
@@ -2247,8 +2455,8 @@ export default function App() {
                 <div><label style={lbl}>Location</label><input style={inp} value={d.location} onChange={e => ud(d.id, "location", e.target.value)} placeholder="Front Entry" /></div>
                 <div><label style={lbl}>Door Type</label><select style={sel} value={d.type} onChange={e => ud(d.id, "type", e.target.value)}>{DOOR_TYPES.map(t => <option key={t} value={t}>{t || "-- Select --"}</option>)}</select></div>
                 <div><label style={lbl}>Qty</label><input style={inp} type="number" min="1" value={d.qty} onChange={e => ud(d.id, "qty", e.target.value)} /></div>
-                <div><label style={lbl}>Handing</label><select style={sel} value={d.handing} onChange={e => ud(d.id, "handing", e.target.value)}><option value="">"--"</option><option>Left</option><option>Right</option></select></div>
-                <div><label style={lbl}>Operation</label><select style={sel} value={d.operation} onChange={e => ud(d.id, "operation", e.target.value)}><option value="">"--"</option><option>Inswing</option><option>Outswing</option></select></div>
+                <div><label style={lbl}>Handing</label><select style={sel} value={d.handing} onChange={e => ud(d.id, "handing", e.target.value)}><option value="">--</option><option>Left</option><option>Right</option></select></div>
+                <div><label style={lbl}>Operation</label><select style={sel} value={d.operation} onChange={e => ud(d.id, "operation", e.target.value)}><option value="">--</option><option>Inswing</option><option>Outswing</option></select></div>
               </div>
               <DoorSizeGrid door={d} onChange={(f, v) => ud(d.id, f, v)} />
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginTop: 8 }}>
@@ -2384,12 +2592,12 @@ export default function App() {
               )}
               {d.wrapTrim && (() => {
                 const wid = parseDim(d.netW || d.roughW), hgt = parseDim(d.netH || d.roughH), qty = parseInt(d.qty) || 1;
-                const wrapLF = wid && hgt ? ((2*(wid+2)+(wid+2))/12*qty*WASTE_FACTOR).toFixed(1) : null;
+                const wrapLF = wid && hgt ? ((2*(hgt+2)+(wid+2))/12*qty*WASTE_FACTOR).toFixed(1) : null;
                 const wrapPcs = wid && hgt ? 3 * qty : null;
                 const wrapColorDisplay = d.wrapColor === "Custom" ? d.wrapColorCustom : d.wrapColor;
                 return (
                   <div style={{ marginTop: 6, padding: "8px 10px", background: `${NAVY}08`, border: `1px solid ${NAVY}25`, borderRadius: 8 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: NAVY, marginBottom: 6 }}>METAL WRAP / COIL{wrapLF ? ` — ${wrapLF} LF, ${wrapPcs} pcs` : ""}</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: NAVY, marginBottom: 6 }}>METAL WRAP{wrapLF ? ` — ${wrapLF} LF, ${wrapPcs} pcs` : ""}</div>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 }}>
                       <div><label style={lbl}>Texture</label><select style={sel} value={d.wrapTexture} onChange={e => ud(d.id, "wrapTexture", e.target.value)}><option value="">-- Select --</option><option>Smooth</option><option>Textured</option></select></div>
                       <div>
@@ -2419,7 +2627,17 @@ export default function App() {
                     </div>
                     <div><label style={lbl}>Size</label><select style={sel} value={d.extTrimSize} onChange={e => ud(d.id, "extTrimSize", e.target.value)}>{EXT_TRIM_SIZES.map(s => <option key={s} value={s}>{s || "-- Select --"}</option>)}</select></div>
                     <div><label style={lbl}>Texture</label><select style={sel} value={d.extTrimTexture} onChange={e => ud(d.id, "extTrimTexture", e.target.value)}>{EXT_TRIM_TEXTURES.map(t => <option key={t} value={t}>{t || "-- Select --"}</option>)}</select></div>
-                    <div><label style={lbl}>Color</label><input style={inp} value={d.extTrimColor || ""} onChange={e => ud(d.id, "extTrimColor", e.target.value)} placeholder="White, Cream..." /></div>
+                    <div>
+                      <label style={lbl}>Color</label>
+                      {(() => { const colors = getExtTrimColors(d.extTrimBrand); const isCustom = d.extTrimColor === "Custom"; return (<>
+                        <select style={sel} value={d.extTrimColor || ""} onChange={e => ud(d.id, "extTrimColor", e.target.value)}>
+                          <option value="">-- Select --</option>
+                          {colors.map(c => <option key={c} value={c}>{c}</option>)}
+                          {d.extTrimColor && !colors.includes(d.extTrimColor) && d.extTrimColor !== "" && <option value={d.extTrimColor}>{d.extTrimColor}</option>}
+                        </select>
+                        {isCustom && <input style={{ ...inp, marginTop: 4, fontSize: 12 }} value={d.extTrimColorCustom || ""} onChange={e => ud(d.id, "extTrimColorCustom", e.target.value)} placeholder="Custom color..." />}
+                      </>); })()}
+                    </div>
                   </div>
                   {dMats && <div style={{ fontSize: 11, color: "#666", marginTop: 4 }}>{dMats.extLF} LF — {dMats.extDetail}{dMats.sideliteExtra && <span style={{ color: ORANGE }}> ({dMats.sideliteExtra})</span>}</div>}
                 </div>
@@ -2429,7 +2647,7 @@ export default function App() {
                 const jCol = d.jambFinish === "Stained" ? (d.jambStainColor === "Custom" ? d.jambStainCustom : d.jambStainColor) : d.jambColor;
                 const cCol = d.casingFinish === "Stained" ? (d.casingStainColor === "Custom" ? d.casingStainCustom : d.casingStainColor) : d.casingColor;
                 const wid = parseDim(d.netW || d.roughW), hgt = parseDim(d.netH || d.roughH), qty = parseInt(d.qty) || 1;
-                const wrapLF = wid && hgt ? ((2*(wid+2)+(wid+2))/12*qty*WASTE_FACTOR).toFixed(1) : null;
+                const wrapLF = wid && hgt ? ((2*(hgt+2)+(wid+2))/12*qty*WASTE_FACTOR).toFixed(1) : null;
                 const wrapPcs = wid && hgt ? 3 * qty : null;
                 const wrapColorDisplay = d.wrapColor === "Custom" ? d.wrapColorCustom : d.wrapColor;
                 const extBrand = d.extTrimBrand === "Custom" ? d.extTrimBrandCustom : d.extTrimBrand;
@@ -2438,7 +2656,7 @@ export default function App() {
                     <div style={{ fontWeight: 700, color: GREEN, marginBottom: 4, fontSize: 12 }}>Door Material Calc ({dMats.width}" x {dMats.height}" x {d.qty})</div>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
                       {d.jamb && <div><strong>Jamb Ext{jSize ? ` (${jSize})` : ""}:</strong> {dMats.jambLF} LF | {dMats.jambPcs} pcs{[d.jambSpecies, d.jambFinish, jCol].filter(Boolean).length ? <span style={{ color: NAVY }}> — {[d.jambSpecies, d.jambFinish, jCol].filter(Boolean).join(" / ")}</span> : ""}<br /><span style={{ color: "#666" }}>{dMats.jambDetail}</span></div>}
-                      {d.casing && <div><strong>Int Casing:</strong> {dMats.casingLF} LF | {dMats.casingPcs} pcs{[d.casingSpecies, d.casingFinish, cCol].filter(Boolean).length ? <span style={{ color: NAVY }}> — {[d.casingSpecies, d.casingFinish, cCol].filter(Boolean).join(" / ")}</span> : ""}<br /><span style={{ color: "#666" }}>{dMats.casingDetail}</span></div>}
+                      {d.casing && <div><strong>Int Casing{d.casingSize ? ` (${d.casingSize === "Custom" ? d.casingSizeCustom : d.casingSize})` : ""}:</strong> {dMats.casingLF} LF | {dMats.casingPcs} pcs{[d.casingSpecies, d.casingFinish, cCol].filter(Boolean).length ? <span style={{ color: NAVY }}> — {[d.casingSpecies, d.casingFinish, cCol].filter(Boolean).join(" / ")}</span> : ""}<br /><span style={{ color: "#666" }}>{dMats.casingDetail}</span></div>}
                       {d.extTrim && <div><strong>Ext Trim{d.extTrimSize ? ` (${d.extTrimSize}${d.extTrimTexture ? ` ${d.extTrimTexture}` : ""})` : ""}:</strong> {dMats.extLF} LF{extBrand ? <span style={{ color: getTrimBrandColor(d.extTrimBrand === "Custom" ? "Custom" : d.extTrimBrand), fontWeight: 700 }}> — {extBrand}</span> : ""}{d.extTrimColor ? <span style={{ color: "#555" }}> / {d.extTrimColor}</span> : ""}<br /><span style={{ color: "#666" }}>{dMats.extDetail}</span>{dMats.sideliteExtra && <><br /><span style={{ color: ORANGE }}>{dMats.sideliteExtra}</span></>}</div>}
                       {d.wrapTrim && wrapLF && <div><strong>Metal Wrap:</strong> {wrapLF} LF | {wrapPcs} pcs{d.wrapTexture ? <span style={{ color: "#666" }}> ({d.wrapTexture})</span> : ""}{wrapColorDisplay ? <span style={{ color: NAVY }}> — {wrapColorDisplay}</span> : ""}</div>}
                     </div>
@@ -2468,10 +2686,11 @@ export default function App() {
         )}
       </div>
       <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "#fff", borderTop: `2px solid ${NAVY}`, padding: "8px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", zIndex: 50, boxShadow: "0 -2px 12px rgba(0,0,0,0.1)" }}>
-        <div style={{ display: "flex", gap: 14 }}>
+        <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: NAVY }}>QTY: {tQty}</div>
           <div style={{ fontSize: 13, fontWeight: 700, color: ORANGE }}>PCS: {tPcs}</div>
           {doors.length > 0 && <div style={{ fontSize: 13, fontWeight: 700, color: "#666" }}>DOORS: {doors.length}</div>}
+          {tQty > 0 && <div style={{ fontSize: 10, color: "#888", borderLeft: `1px solid ${GRAY_BORDER}`, paddingLeft: 10 }}>{(() => { const counts = {}; wins.filter(w => !w.mullMode).forEach(w => { counts[w.type] = (counts[w.type] || 0) + (parseInt(w.qty) || 1); }); return Object.entries(counts).map(([t, c]) => `${c} ${t}`).join(", "); })()}</div>}
         </div>
         <div style={{ display: "flex", gap: 6 }}>
           <button onClick={saveJob} style={{ ...bS, padding: "8px 14px", fontSize: 12, background: saved ? "#ecfdf5" : "#fff", color: saved ? GREEN : NAVY }}>{saved ? "Saved" : "Save"}</button>
