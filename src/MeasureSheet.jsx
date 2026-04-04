@@ -116,6 +116,8 @@ const GRID_TYPES = ["None", "SDL", "GBG"];
 const GRID_PATTERNS = ["Colonial", "Prairie", "Craftsman", "Cottage", "Diamond", "Custom"];
 const GRID_LOCATIONS = ["Both", "Upper Sash", "Lower Sash"];
 const INSTALL_TYPES = ["Replacement", "Full Frame", "Pocket"];
+const US_STATES = ["","AL","AK","AZ","AR","CA","CO","CT","DE","DC","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"];
+const CONFIG_OPTIONS = { "DH":["","N/A"], "SH":["","N/A"], "CAS-L":["","LH"], "CAS-R":["","RH"], "DCAS":["","LH/RH","RH/LH"], "TCAS":["","LH/RH/LH","RH/LH/RH"], "AWN":["","N/A"], "SLD":["","XO","OX"], "DSLD":["","XO","OX","OXO","XOX"], "3SLD":["","XOX","OXO"], "PIC":["","N/A"], "SHAPE":["","N/A"], "BAY":["","N/A"], "BOW":["","N/A"], "HOP":["","N/A"], "GARDEN":["","N/A"] };
 const WALL_THICK = ["2x4", "2x6"];
 const TEMPERED_OPTIONS = ["No", "Full", "Top Sash", "Bottom Sash"];
 const SCREEN_OPTIONS = ["Full", "Half", "No Screen"];
@@ -476,6 +478,18 @@ function parseDim(s) {
 }
 function inToFt(i) { return i / 12; }
 function fmtDate(d) { if (!d) return ""; const [y,m,day] = d.split("-"); return `${m}/${day}/${y}`; }
+function autoRough(netVal, installType) {
+  const net = parseDim(netVal);
+  if (!net) return "";
+  const add = installType === "Full Frame" ? 1 : installType === "Pocket" ? 0.25 : 0.5;
+  const rough = net + add;
+  const whole = Math.floor(rough), frac = rough - whole;
+  if (frac === 0) return String(whole);
+  if (Math.abs(frac - 0.25) < 0.01) return `${whole} 1/4`;
+  if (Math.abs(frac - 0.5) < 0.01) return `${whole} 1/2`;
+  if (Math.abs(frac - 0.75) < 0.01) return `${whole} 3/4`;
+  return String(Math.round(rough * 4) / 4);
+}
 
 function calcMaterials(w) {
   const netW = parseDim(w.netW), netH = parseDim(w.netH);
@@ -646,7 +660,7 @@ function calcDoorMaterials(d) {
 
 function getPcs(t) { return WINDOW_TYPES.find(x => x.code === t)?.pcs || 1; }
 
-const mkWin = () => ({ id: Date.now() + Math.random(), location: "", qty: 1, type: "DH", config: "", netW: "", netH: "", roughW: "", roughH: "", gridType: "None", gridPattern: "", gridLocation: "Both", litesW: "", litesH: "", tempered: "No", glass: "DP LoE2 Ar", glassTexture: "Clear", screen: "Full", hardwareColor: "", hardwareColorCustom: "", sashSplit: "50", hasTransom: false, transomH: "", transomType: "PIC", hasBottomLight: false, bottomLightH: "", bottomLightType: "AWN", casing: false, jamb: false, stools: false, wrapTrim: false, extTrim: false, winWrap: "", shapeCode: "", shapeNotes: "", baySeatDepth: "", bayProjection: "", bayPanels: "", bowPanelCount: "4", notes: "", expanded: true, winLine: "1", mullOverallW: "", mullOverallH: "",
+const mkWin = () => ({ id: Date.now() + Math.random(), location: "", qty: 1, type: "DH", config: "", netW: "", netH: "", roughW: "", roughH: "", roughWAuto: true, roughHAuto: true, gridType: "None", gridPattern: "", gridLocation: "Both", litesW: "", litesH: "", tempered: "No", glass: "DP LoE2 Ar", glassTexture: "Clear", screen: "Full", hardwareColor: "", hardwareColorCustom: "", sashSplit: "50", hasTransom: false, transomH: "", transomType: "PIC", hasBottomLight: false, bottomLightH: "", bottomLightType: "AWN", casing: false, jamb: false, stools: false, wrapTrim: false, extTrim: false, winWrap: "", shapeCode: "", shapeNotes: "", baySeatDepth: "", bayProjection: "", bayPanels: "", bowPanelCount: "4", notes: "", expanded: true, winLine: "1", mullOverallW: "", mullOverallH: "",
   // Per-window Interior Trim
   jambSize: "", jambSizeCustom: "", jambSpecies: "", jambFinish: "", jambColor: "", jambStainColor: "", jambStainCustom: "",
   casingSize: "", casingSizeCustom: "", casingSpecies: "", casingFinish: "", casingColor: "", casingStainColor: "", casingStainCustom: "",
@@ -657,7 +671,7 @@ const mkWin = () => ({ id: Date.now() + Math.random(), location: "", qty: 1, typ
   // Per-window Wrap
   wrapTexture: "", wrapColor: "", wrapColorCustom: "", mullMode: false, mullUnits: "[]", mullSpanTop: false, mullSpanTopType: "HALF-RND", mullSpanTopH: "",
 });
-const mkDoor = () => ({ id: Date.now() + Math.random(), type: "", location: "", qty: 1, handing: "", operation: "", netW: "", netH: "", roughW: "", roughH: "", glassConfig: "", glass: "DP LoE2 Ar", glassTexture: "Clear", hardwareColor: "", hardwareColorCustom: "", hardwareType: "", hardwareTypeCustom: "", jambThickness: "", sidelites: "None", sideliteW: "", sideliteWLeft: "", sideliteWRight: "", sideliteGlassTexture: "Clear", transom: false, transomH: "", threshold: "", doorScreen: "", doorShape: "Square Top", doorShapeNotes: "", jamb: false, casing: false, wrapTrim: false, extTrim: false, doorWrap: "", notes: "", expanded: true,
+const mkDoor = () => ({ id: Date.now() + Math.random(), type: "", location: "", qty: 1, handing: "", operation: "", netW: "", netH: "", roughW: "", roughH: "", roughWAuto: true, roughHAuto: true, glassConfig: "", glass: "DP LoE2 Ar", glassTexture: "Clear", hardwareColor: "", hardwareColorCustom: "", hardwareType: "", hardwareTypeCustom: "", jambThickness: "", sidelites: "None", sideliteW: "", sideliteWLeft: "", sideliteWRight: "", sideliteGlassTexture: "Clear", transom: false, transomH: "", threshold: "", doorScreen: "", doorShape: "Square Top", doorShapeNotes: "", jamb: false, casing: false, wrapTrim: false, extTrim: false, doorWrap: "", notes: "", expanded: true,
   // Per-door Interior Trim
   jambSize: "", jambSizeCustom: "", jambSpecies: "", jambFinish: "", jambColor: "", jambStainColor: "", jambStainCustom: "",
   casingSize: "", casingSizeCustom: "", casingSpecies: "", casingFinish: "", casingColor: "", casingStainColor: "", casingStainCustom: "",
@@ -1305,6 +1319,11 @@ export default function App() {
 
   useEffect(() => { (async () => { try { const r = await window.storage.list("uws-job:"); if (r?.keys) setJobList(r.keys); } catch (e) {} })(); }, []);
   useEffect(() => { (async () => { try { const r = await window.storage.get("uws-zapier-url"); if (r?.value) setProj(p => ({ ...p, zapierUrl: r.value })); } catch (e) {} })(); }, []);
+  // Recalculate auto-rough values when install type changes
+  useEffect(() => {
+    setWins(ws => ws.map(w => ({ ...w, roughW: w.roughWAuto ? autoRough(w.netW, proj.installType) : w.roughW, roughH: w.roughHAuto ? autoRough(w.netH, proj.installType) : w.roughH })));
+    setDoors(ds => ds.map(d => ({ ...d, roughW: d.roughWAuto ? autoRough(d.netW, proj.installType) : d.roughW, roughH: d.roughHAuto ? autoRough(d.netH, proj.installType) : d.roughH })));
+  }, [proj.installType]);
 
   const tQty = wins.reduce((s, w) => s + (parseInt(w.qty) || 0), 0);
   const tPcs = wins.reduce((s, w) => s + (parseInt(w.qty) || 0) * getPcs(w.type), 0);
@@ -1318,6 +1337,11 @@ export default function App() {
       const newColors = getExtTrimColors(v);
       if (!newColors.includes(w.extTrimColor)) { upd.extTrimColor = ""; upd.extTrimColorCustom = ""; }
     }
+    // Auto-rough: recalculate when net changes (if auto mode)
+    if (f === "netW" && upd.roughWAuto) upd.roughW = autoRough(v, proj.installType);
+    if (f === "netH" && upd.roughHAuto) upd.roughH = autoRough(v, proj.installType);
+    if (f === "roughW") upd.roughWAuto = false;
+    if (f === "roughH") upd.roughHAuto = false;
     return upd;
   })); setSaved(false); };
   const ud = (id, f, v) => { setDoors(ds => ds.map(d => {
@@ -1327,6 +1351,10 @@ export default function App() {
       const newColors = getExtTrimColors(v);
       if (!newColors.includes(d.extTrimColor)) { upd.extTrimColor = ""; upd.extTrimColorCustom = ""; }
     }
+    if (f === "netW" && upd.roughWAuto) upd.roughW = autoRough(v, proj.installType);
+    if (f === "netH" && upd.roughHAuto) upd.roughH = autoRough(v, proj.installType);
+    if (f === "roughW") upd.roughWAuto = false;
+    if (f === "roughH") upd.roughHAuto = false;
     return upd;
   })); setSaved(false); };
 
@@ -1422,7 +1450,7 @@ export default function App() {
                 <tr style={{ borderBottom: isMull ? "none" : "1px solid #ddd" }}>
                   <td style={{ padding: "4px 3px", fontWeight: 600, background: "#EEF3F8" }}>{i + 1}</td>
                   {proj.showBrand2 && <td style={{ padding: "4px 3px", textAlign: "center", fontWeight: 700, color: w.winLine === "2" ? ORANGE : NAVY, background: "#fff" }}>{w.winLine || "1"}</td>}
-                  <td style={{ padding: "4px 3px", background: proj.showBrand2 ? "#EEF3F8" : "#fff" }}>{w.location}</td>
+                  <td style={{ padding: "4px 3px", background: proj.showBrand2 ? "#EEF3F8" : "#fff" }}>{w.location}{proj.showBrand2 && <div style={{ fontSize: 7, color: w.winLine === "2" ? ORANGE : NAVY, marginTop: 1 }}>Int: {w.winLine === "2" ? proj.winInt2Color : proj.winIntColor} / Ext: {w.winLine === "2" ? proj.winExt2Color : proj.winExtColor}</div>}</td>
                   <td style={{ padding: "4px 3px", textAlign: "center", background: "#EEF3F8" }}>{w.qty}</td>
                   <td style={{ padding: "4px 3px", fontWeight: 600, background: "#fff" }}>{w.type}{shapeName}</td>
                   <td style={{ padding: "4px 3px", background: "#EEF3F8" }}>{w.config}</td>
@@ -1573,10 +1601,11 @@ export default function App() {
           </div>
         )}
         {doors.length > 0 && (<div style={{ marginTop: 16 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: NAVY, marginBottom: 8, borderBottom: `2px solid ${ORANGE}`, paddingBottom: 4 }}>DOOR SELECTION</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: NAVY, marginBottom: 4, borderBottom: `2px solid ${ORANGE}`, paddingBottom: 4 }}>DOOR SELECTION</div>
+          {proj.doorBrand && <div style={{ fontSize: 10, color: "#555", marginBottom: 6 }}><strong>Brand:</strong> {proj.doorBrand === "Custom" ? proj.doorBrandCustom : proj.doorBrand}{proj.doorSeries ? ` — ${proj.doorSeries === "Custom" ? proj.doorSeriesCustom : proj.doorSeries}` : ""}</div>}
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 10 }}>
             <thead><tr style={{ background: NAVY, color: "#fff" }}>
-              {["#", "Location", "Type", "Qty", "Hand", "Op", sLbl.netW, sLbl.netH, "R.O. W", "R.O. H", "Glass Cfg", "Glass", "Jamb Thk", "Sidelites", "Threshold", "Screen", "Hardware", "Wrap", "Notes", ""].map((h, i) =>
+              {["#", "Location", "Type", "Qty", "Hand", "Op", sLbl.netW, sLbl.netH, "R.O. W", "R.O. H", "Glass Cfg", "Glass", "Jamb Thk", "Sidelites", "Threshold", "Screen", "HW Type", "HW Color", "Wrap", "Notes", ""].map((h, i) =>
                 <th key={i} style={{ padding: "5px 3px", textAlign: "left", fontWeight: 600, fontSize: 8, borderRight: "1px solid #1a5a7a", whiteSpace: "nowrap" }}>{h}</th>
               )}
             </tr></thead>
@@ -1588,7 +1617,8 @@ export default function App() {
               <td style={{ padding: "4px 3px" }}>{d.glassConfig}</td><td style={{ padding: "4px 3px" }}>{d.glass}{d.glassTexture !== "Clear" ? ` ${d.glassTexture}` : ""}</td>
               <td style={{ padding: "4px 3px" }}>{d.jambThickness}</td><td style={{ padding: "4px 3px" }}>{d.sidelites !== "None" ? `${d.sidelites}${d.sidelites === "Both" ? ` L:${d.sideliteWLeft||"?"}"/R:${d.sideliteWRight||"?"}"` : d.sideliteW ? ` ${d.sideliteW}"` : ""}${d.sideliteGlassTexture && d.sideliteGlassTexture !== "Clear" ? ` (${d.sideliteGlassTexture})` : ""}` : ""}</td>
               <td style={{ padding: "4px 3px" }}>{d.threshold}</td><td style={{ padding: "4px 3px" }}>{d.doorScreen}</td>
-              <td style={{ padding: "4px 3px", fontSize: 9 }}>{[d.hardwareType === "Custom" ? d.hardwareTypeCustom : d.hardwareType, d.hardwareColor === "Custom" ? d.hardwareColorCustom : d.hardwareColor].filter(Boolean).join(" / ")}</td><td style={{ padding: "4px 3px" }}>{d.doorWrap}</td><td style={{ padding: "4px 3px", fontSize: 9 }}>{[d.notes, d.transom && d.transomH ? `Transom: ${d.transomH}"` : "", d.doorShape && d.doorShape !== "Square Top" ? `Shape: ${d.doorShape}${d.doorShapeNotes ? ` (${d.doorShapeNotes})` : ""}` : ""].filter(Boolean).join(" | ")}</td>
+              <td style={{ padding: "4px 3px", fontSize: 9 }}>{d.hardwareType === "Custom" ? d.hardwareTypeCustom : d.hardwareType || ""}</td>
+              <td style={{ padding: "4px 3px", fontSize: 9 }}>{d.hardwareColor === "Custom" ? d.hardwareColorCustom : d.hardwareColor || ""}</td><td style={{ padding: "4px 3px" }}>{d.doorWrap}</td><td style={{ padding: "4px 3px", fontSize: 9 }}>{[d.notes, d.transom && d.transomH ? `Transom: ${d.transomH}"` : "", d.doorShape && d.doorShape !== "Square Top" ? `Shape: ${d.doorShape}${d.doorShapeNotes ? ` (${d.doorShapeNotes})` : ""}` : ""].filter(Boolean).join(" | ")}</td>
               <td style={{ padding: "2px 3px", textAlign: "center" }}><DoorIcon type={d.type} sidelites={d.sidelites} transom={d.transom} glassConfig={d.glassConfig} handing={d.handing} operation={d.operation} /></td>
             </tr>)}</tbody>
           </table>
@@ -1801,7 +1831,7 @@ export default function App() {
             <div style={{ marginTop: 10 }}><label style={lbl}>Street Address</label><input style={inp} value={proj.address} onChange={e => up("address", e.target.value)} placeholder="Street address" /></div>
             <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1.5fr 1.5fr", gap: 10, marginTop: 8 }}>
               <div><label style={lbl}>City</label><input style={inp} value={proj.city || ""} onChange={e => up("city", e.target.value)} placeholder="City" /></div>
-              <div><label style={lbl}>State</label><input style={inp} value={proj.state || ""} onChange={e => up("state", e.target.value)} placeholder="IL" maxLength={2} /></div>
+              <div><label style={lbl}>State</label><select style={sel} value={proj.state || ""} onChange={e => up("state", e.target.value)}><option value="">--</option>{US_STATES.filter(Boolean).map(s => <option key={s}>{s}</option>)}</select></div>
               <div><label style={lbl}>ZIP Code</label><input style={inp} value={proj.zip || ""} onChange={e => up("zip", e.target.value)} placeholder="60601" /></div>
               <div><label style={lbl}>Phone</label><input style={inp} type="tel" value={proj.phone || ""} onChange={e => up("phone", e.target.value)} placeholder="(319) 555-0123" /></div>
               <div><label style={lbl}>Email</label><input style={inp} type="email" value={proj.email || ""} onChange={e => up("email", e.target.value)} placeholder="customer@email.com" /></div>
@@ -1836,7 +1866,7 @@ export default function App() {
             </div>
             {/* Secondary Window Brand/Series */}
             <div style={{ marginTop: 8 }}>
-              <button onClick={() => up("showBrand2", !proj.showBrand2)} style={{ background: "none", border: `1px dashed ${NAVY}50`, borderRadius: 6, padding: "4px 10px", fontSize: 11, color: NAVY, cursor: "pointer", fontWeight: 600 }}>
+              <button onClick={() => { if (!proj.showBrand2) { up("showBrand2", true); if (!proj.brand2) up("brand2", proj.brand); if (!proj.series2) up("series2", proj.series); if (!proj.winInt2Color) up("winInt2Color", proj.winIntColor); if (!proj.winExt2Color) up("winExt2Color", proj.winExtColor); } else { up("showBrand2", false); } }} style={{ background: "none", border: `1px dashed ${NAVY}50`, borderRadius: 6, padding: "4px 10px", fontSize: 11, color: NAVY, cursor: "pointer", fontWeight: 600 }}>
                 {proj.showBrand2 ? "− Remove Secondary Window Line" : "+ Add Secondary Window Line"}
               </button>
             </div>
@@ -1993,7 +2023,7 @@ export default function App() {
           </>}
         </div>
 
-        <div style={{ ...sec, marginBottom: 6, display: "flex", justifyContent: "space-between", alignItems: "center" }}><span>Windows ({wins.filter(w => !w.mullMode).length})</span><div style={{ display: "flex", gap: 12, fontSize: 13, fontWeight: 600, alignItems: "center" }}><span style={{ color: NAVY }}>QTY: {tQty}</span><span style={{ color: ORANGE }}>PCS: {tPcs}</span><button onClick={() => { const allExpanded = wins.filter(w => !w.mullMode).every(w => w.expanded); setWins(ws => ws.map(w => w.mullMode ? w : { ...w, expanded: !allExpanded })); }} style={{ fontSize: 10, padding: "3px 8px", background: "transparent", color: NAVY, border: `1px solid ${NAVY}40`, borderRadius: 4, cursor: "pointer", fontWeight: 600 }}>{wins.filter(w => !w.mullMode).every(w => w.expanded) ? "Collapse All" : "Expand All"}</button></div></div>
+        <div style={{ ...sec, marginBottom: 6, display: "flex", justifyContent: "space-between", alignItems: "center" }}><span>Windows ({wins.filter(w => !w.mullMode).length}) <button onClick={addWin} style={{ marginLeft: 8, background: ORANGE, color: "#fff", border: "none", borderRadius: 6, padding: "3px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer", verticalAlign: "middle" }}>+ Add</button></span><div style={{ display: "flex", gap: 12, fontSize: 13, fontWeight: 600, alignItems: "center" }}><span style={{ color: NAVY }}>QTY: {tQty}</span><span style={{ color: ORANGE }}>PCS: {tPcs}</span><button onClick={() => { const allExpanded = wins.filter(w => !w.mullMode).every(w => w.expanded); setWins(ws => ws.map(w => w.mullMode ? w : { ...w, expanded: !allExpanded })); }} style={{ fontSize: 10, padding: "3px 8px", background: "transparent", color: NAVY, border: `1px solid ${NAVY}40`, borderRadius: 4, cursor: "pointer", fontWeight: 600 }}>{wins.filter(w => !w.mullMode).every(w => w.expanded) ? "Collapse All" : "Expand All"}</button></div></div>
         {wins.filter(w => !w.mullMode).map((w, idx) => { const mats = calcMaterials(getMullEffDims(w)); const isBayBow = w.type === "BAY" || w.type === "BOW";
           const wBrand = w.winLine === "2" ? (proj.brand2 || "") : proj.brand;
           const wSeries = w.winLine === "2" ? (proj.series2 || "") : proj.series;
@@ -2047,13 +2077,13 @@ export default function App() {
                     {typeOptions.map(t => <option key={t.code} value={t.code}>{t.name}{typeIsUnavailable && t.code === w.type ? " ⚠ not available" : ""}</option>)}
                   </select>
                 </div>
-                <div><label style={lbl}>Config / Handing</label><input style={inp} value={w.config} onChange={e => uw(w.id, "config", e.target.value)} placeholder="LH, RH, XO" /></div>
+                <div><label style={lbl}>Config / Handing</label><select style={sel} value={w.config} onChange={e => uw(w.id, "config", e.target.value)}>{(CONFIG_OPTIONS[w.type] || ["","LH","RH","XO","OX","N/A"]).map(c => <option key={c} value={c}>{c || "-- Select --"}</option>)}{w.config && !(CONFIG_OPTIONS[w.type] || []).includes(w.config) && <option value={w.config}>{w.config}</option>}</select></div>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginTop: 8 }}>
                 <div><label style={lbl}>{sLbl.netW}</label><input style={inp} value={w.netW} onChange={e => uw(w.id, "netW", e.target.value)} placeholder="35 1/2" /></div>
                 <div><label style={lbl}>{sLbl.netH}</label><input style={inp} value={w.netH} onChange={e => uw(w.id, "netH", e.target.value)} placeholder="59 1/2" /></div>
-                <div><label style={lbl}>{sLbl.roughW}</label><input style={inp} value={w.roughW} onChange={e => uw(w.id, "roughW", e.target.value)} placeholder="36" /></div>
-                <div><label style={lbl}>{sLbl.roughH}</label><input style={inp} value={w.roughH} onChange={e => uw(w.id, "roughH", e.target.value)} placeholder="60" /></div>
+                <div><label style={lbl}>{sLbl.roughW}{w.roughWAuto && w.roughW ? <span style={{ color: GREEN, fontSize: 9, marginLeft: 3 }}>auto</span> : null}</label><input style={{ ...inp, ...(w.roughWAuto && w.roughW ? { background: "#f0fdf4" } : {}) }} value={w.roughW} onChange={e => uw(w.id, "roughW", e.target.value)} placeholder="36" /></div>
+                <div><label style={lbl}>{sLbl.roughH}{w.roughHAuto && w.roughH ? <span style={{ color: GREEN, fontSize: 9, marginLeft: 3 }}>auto</span> : null}</label><input style={{ ...inp, ...(w.roughHAuto && w.roughH ? { background: "#f0fdf4" } : {}) }} value={w.roughH} onChange={e => uw(w.id, "roughH", e.target.value)} placeholder="60" /></div>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr 1fr 1fr 0.8fr 0.8fr 1fr", gap: 8, marginTop: 8 }}>
                 <div><label style={lbl}>{sLbl.glass}</label><select style={sel} value={w.glass} onChange={e => uw(w.id, "glass", e.target.value)}>{(()=>{ const opts = getGlassOptions(wBrand, wSeries); return (w.glass && !opts.includes(w.glass) ? [w.glass, ...opts] : opts).map(g => <option key={g}>{g}</option>); })()}</select></div>
@@ -2087,11 +2117,11 @@ export default function App() {
                     <div><label style={lbl}>Grid Location</label><select style={sel} value={w.gridLocation || "Both"} onChange={e => uw(w.id, "gridLocation", e.target.value)}>{GRID_LOCATIONS.map(g => <option key={g}>{g}</option>)}</select></div>
                     <div>
                       <label style={lbl}>Lites Wide</label>
-                      <input style={inp} value={w.litesW} onChange={e => uw(w.id, "litesW", e.target.value)} placeholder="2" />
+                      <input type="number" min="1" max="12" style={inp} value={w.litesW} onChange={e => uw(w.id, "litesW", e.target.value)} placeholder="2" />
                     </div>
                     <div>
                       <label style={lbl}>Lites Tall</label>
-                      <input style={inp} value={w.litesH} onChange={e => uw(w.id, "litesH", e.target.value)} placeholder="3" />
+                      <input type="number" min="1" max="12" style={inp} value={w.litesH} onChange={e => uw(w.id, "litesH", e.target.value)} placeholder="3" />
                     </div>
                     <div style={{ display: "flex", alignItems: "flex-end" }}>
                       {totalBars !== null && (
@@ -2530,8 +2560,8 @@ export default function App() {
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginTop: 8 }}>
                 <div><label style={lbl}>{sLbl.netW}</label><input style={inp} value={d.netW} onChange={e => ud(d.id, "netW", e.target.value)} placeholder="36" /></div>
                 <div><label style={lbl}>{sLbl.netH}</label><input style={inp} value={d.netH} onChange={e => ud(d.id, "netH", e.target.value)} placeholder="80" /></div>
-                <div><label style={lbl}>{sLbl.roughW}</label><input style={inp} value={d.roughW} onChange={e => ud(d.id, "roughW", e.target.value)} /></div>
-                <div><label style={lbl}>{sLbl.roughH}</label><input style={inp} value={d.roughH} onChange={e => ud(d.id, "roughH", e.target.value)} /></div>
+                <div><label style={lbl}>{sLbl.roughW}{d.roughWAuto && d.roughW ? <span style={{ color: GREEN, fontSize: 9, marginLeft: 3 }}>auto</span> : null}</label><input style={{ ...inp, ...(d.roughWAuto && d.roughW ? { background: "#f0fdf4" } : {}) }} value={d.roughW} onChange={e => ud(d.id, "roughW", e.target.value)} /></div>
+                <div><label style={lbl}>{sLbl.roughH}{d.roughHAuto && d.roughH ? <span style={{ color: GREEN, fontSize: 9, marginLeft: 3 }}>auto</span> : null}</label><input style={{ ...inp, ...(d.roughHAuto && d.roughH ? { background: "#f0fdf4" } : {}) }} value={d.roughH} onChange={e => ud(d.id, "roughH", e.target.value)} /></div>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginTop: 8 }}>
                 <div><label style={lbl}>Glass Config</label><select style={sel} value={d.glassConfig} onChange={e => ud(d.id, "glassConfig", e.target.value)}>{DOOR_GLASS_CONFIGS.map(g => <option key={g} value={g}>{g || "-- Select --"}</option>)}</select></div>
