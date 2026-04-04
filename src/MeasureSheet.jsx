@@ -549,9 +549,9 @@ function calcMaterials(w) {
   const eBuySummary = [...new Set(eBuyList)].map(l => `${eBuyList.filter(x => x === l).length}x ${l}'`).join(" + ");
 
   return {
-    jambLF: jWithWaste.toFixed(1), jambRawLF: jRawLF.toFixed(1), jambPcs: jPcs, jambDetail: `Buy: ${jBuySummary} (${jRawLF.toFixed(1)} LF + 10% waste)`,
-    casingLF: cWithWaste.toFixed(1), casingRawLF: cRawLF.toFixed(1), casingPcs: cPcs, casingDetail: `Buy: ${cBuySummary} (${cRawLF.toFixed(1)} LF + 10% waste)`,
-    extLF: eWithWaste.toFixed(1), extRawLF: eRawLF.toFixed(1), extPcs: ePcs, extDetail: `Buy: ${eBuySummary} (${eRawLF.toFixed(1)} LF + 10% waste)`,
+    jambLF: jWithWaste.toFixed(1), jambRawLF: jRawLF.toFixed(1), jambPcs: jPcs, jambDetail: `Buy: ${jBuySummary} (${jRawLF.toFixed(1)} LF + 10% waste)`, jambBuy: jBuySummary,
+    casingLF: cWithWaste.toFixed(1), casingRawLF: cRawLF.toFixed(1), casingPcs: cPcs, casingDetail: `Buy: ${cBuySummary} (${cRawLF.toFixed(1)} LF + 10% waste)`, casingBuy: cBuySummary,
+    extLF: eWithWaste.toFixed(1), extRawLF: eRawLF.toFixed(1), extPcs: ePcs, extDetail: `Buy: ${eBuySummary} (${eRawLF.toFixed(1)} LF + 10% waste)`, extBuy: eBuySummary,
     width, height,
   };
 }
@@ -636,9 +636,9 @@ function calcDoorMaterials(d) {
   const eBuySummary = [...new Set(eBuyList)].map(l => `${eBuyList.filter(x => x === l).length}x ${l}'`).join(" + ");
 
   return {
-    jambLF: jWithWaste.toFixed(1), jambRawLF: jRawLF.toFixed(1), jambPcs: jPcs, jambDetail: `Buy: ${jBuySummary} (${jRawLF.toFixed(1)} LF + 10% waste)`,
-    casingLF: cWithWaste.toFixed(1), casingRawLF: cRawLF.toFixed(1), casingPcs: cPcs, casingDetail: `Buy: ${cBuySummary} (${cRawLF.toFixed(1)} LF + 10% waste)`,
-    extLF: eWithWaste.toFixed(1), extRawLF: eRawLF.toFixed(1), extPcs: ePcs, extDetail: `Buy: ${eBuySummary} (${eRawLF.toFixed(1)} LF + 10% waste)`,
+    jambLF: jWithWaste.toFixed(1), jambRawLF: jRawLF.toFixed(1), jambPcs: jPcs, jambDetail: `Buy: ${jBuySummary} (${jRawLF.toFixed(1)} LF + 10% waste)`, jambBuy: jBuySummary,
+    casingLF: cWithWaste.toFixed(1), casingRawLF: cRawLF.toFixed(1), casingPcs: cPcs, casingDetail: `Buy: ${cBuySummary} (${cRawLF.toFixed(1)} LF + 10% waste)`, casingBuy: cBuySummary,
+    extLF: eWithWaste.toFixed(1), extRawLF: eRawLF.toFixed(1), extPcs: ePcs, extDetail: `Buy: ${eBuySummary} (${eRawLF.toFixed(1)} LF + 10% waste)`, extBuy: eBuySummary,
     sideliteExtra: slExtra > 0 ? `Incl. ${slExtra.toFixed(1)} LF sidelite trim` : "",
     width, height,
   };
@@ -666,7 +666,7 @@ const mkDoor = () => ({ id: Date.now() + Math.random(), type: "", location: "", 
   // Per-door Wrap
   wrapTexture: "", wrapColor: "", wrapColorCustom: "",
 });
-const mkProj = () => ({ customer: "", address: "", city: "", state: "", zip: "", phone: "", email: "", repName: "", date: new Date().toISOString().split("T")[0], installType: "Replacement", brand: "Midway by Alliance", brandCustom: "", series: "", seriesCustom: "", brand2: "", brandCustom2: "", series2: "", seriesCustom2: "", showBrand2: false, doorBrand: "", doorBrandCustom: "", doorSeries: "", doorSeriesCustom: "", supplier: "GENERIC", brickmould: "", jChannel: "", wallThick: "2x4", winIntColor: "White", winIntFinish: "", winIntStainColor: "", winExtColor: "White", winInt2Color: "White", winInt2Finish: "", winInt2StainColor: "", winExt2Color: "White", doorIntColor: "", doorExtColor: "", specialColor: "", projectNotes: "", zapierUrl: "" });
+const mkProj = () => ({ customer: "", address: "", city: "", state: "", zip: "", phone: "", email: "", repName: "", date: new Date().toISOString().split("T")[0], installType: "Replacement", brand: "Midway by Alliance", brandCustom: "", series: "", seriesCustom: "", brand2: "", brandCustom2: "", series2: "", seriesCustom2: "", showBrand2: false, doorBrand: "", doorBrandCustom: "", doorSeries: "", doorSeriesCustom: "", supplier: "GENERIC", brickmould: "", jChannel: "", wallThick: "2x4", winIntColor: "White", winIntFinish: "", winIntStainColor: "", winExtColor: "White", winInt2Color: "White", winInt2Finish: "", winInt2StainColor: "", winExt2Color: "White", doorIntColor: "", doorExtColor: "", specialColor: "", projectNotes: "", zapierUrl: "", miscItems: "[]" });
 
 function ShapeCanvas({ win, onChange }) {
   const pw = 200, ph = 160;
@@ -856,7 +856,7 @@ function MullPreview({ units, overallW, overallH, spanTop, spanTopType, spanTopH
 function CompositeConfig({ win, onChange, brand, series }) {
   const units = (() => { try { return JSON.parse(win.mullUnits || "[]"); } catch(e) { return []; } })();
   const addUnit = () => {
-    const nu = { id: Date.now() + Math.random(), type: "DH", relW: 1, topType: "", topH: "", bottomType: "", bottomH: "", unitNetW: "", unitNetH: "", glass: "DP LoE2 Ar", gridType: "None", gridPattern: "", screen: "Full", tempered: "No", hardwareColor: "" };
+    const nu = { id: Date.now() + Math.random(), type: "DH", relW: 1, topType: "", topH: "", bottomType: "", bottomH: "", unitNetW: "", unitNetH: "", glass: "DP LoE2 Ar", gridType: "None", gridPattern: "", litesW: "", litesH: "", screen: "Full", tempered: "No", hardwareColor: "" };
     onChange("mullUnits", JSON.stringify([...units, nu]));
   };
   const removeUnit = id => onChange("mullUnits", JSON.stringify(units.filter(u => u.id !== id)));
@@ -1044,6 +1044,25 @@ function CompositeConfig({ win, onChange, brand, series }) {
                     </select>
                   </div>
                 </div>
+                {u.gridType && u.gridType !== "None" && (
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 3, marginTop: 3 }}>
+                    <div>
+                      <div style={{ fontSize: 7, color: "#666" }}>Pattern</div>
+                      <select style={{ ...bbSel, fontSize: 9 }} value={u.gridPattern || ""} onChange={e => upUnit(u.id, "gridPattern", e.target.value)}>
+                        <option value="">--</option>
+                        {GRID_PATTERNS.map(p => <option key={p}>{p}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 7, color: "#666" }}>Lites W</div>
+                      <input type="number" min="1" max="12" style={{ ...bbInp, fontSize: 9 }} value={u.litesW || ""} onChange={e => upUnit(u.id, "litesW", e.target.value)} placeholder="2" />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 7, color: "#666" }}>Lites H</div>
+                      <input type="number" min="1" max="12" style={{ ...bbInp, fontSize: 9 }} value={u.litesH || ""} onChange={e => upUnit(u.id, "litesH", e.target.value)} placeholder="2" />
+                    </div>
+                  </div>
+                )}
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, marginTop: 3 }}>
                   <div>
                     <div style={{ fontSize: 7, color: "#666" }}>Tempered</div>
@@ -1291,8 +1310,25 @@ export default function App() {
   const tPcs = wins.reduce((s, w) => s + (parseInt(w.qty) || 0) * getPcs(w.type), 0);
 
   const up = (f, v) => { setProj(p => ({ ...p, [f]: v })); setSaved(false); };
-  const uw = (id, f, v) => { setWins(ws => ws.map(w => w.id === id ? { ...w, [f]: v } : w)); setSaved(false); };
-  const ud = (id, f, v) => { setDoors(ds => ds.map(d => d.id === id ? { ...d, [f]: v } : d)); setSaved(false); };
+  const uw = (id, f, v) => { setWins(ws => ws.map(w => {
+    if (w.id !== id) return w;
+    const upd = { ...w, [f]: v };
+    // Reset ext trim color when brand changes (old color may not exist in new brand list)
+    if (f === "extTrimBrand" && v !== w.extTrimBrand) {
+      const newColors = getExtTrimColors(v);
+      if (!newColors.includes(w.extTrimColor)) { upd.extTrimColor = ""; upd.extTrimColorCustom = ""; }
+    }
+    return upd;
+  })); setSaved(false); };
+  const ud = (id, f, v) => { setDoors(ds => ds.map(d => {
+    if (d.id !== id) return d;
+    const upd = { ...d, [f]: v };
+    if (f === "extTrimBrand" && v !== d.extTrimBrand) {
+      const newColors = getExtTrimColors(v);
+      if (!newColors.includes(d.extTrimColor)) { upd.extTrimColor = ""; upd.extTrimColorCustom = ""; }
+    }
+    return upd;
+  })); setSaved(false); };
 
   const addWin = () => setWins(ws => [...ws, mkWin()]);
   const rmWin = id => { setWins(ws => ws.filter(w => w.id !== id)); setSaved(false); };
@@ -1373,7 +1409,7 @@ export default function App() {
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 10 }}>
             <thead><tr style={{ background: NAVY, color: "#fff" }}>
-              {["#", "Location", "Qty", "Type", sLbl.config, sLbl.netW, sLbl.netH, sLbl.roughW, sLbl.roughH, "Glass", "Grid / SDL", "Tempered", "Screen", "Hardware", "Shape", "Ext Trim", "Wrap", "Notes", "Units", ""].map((h, i) =>
+              {["#", proj.showBrand2 ? "Line" : null, "Location", "Qty", "Type", sLbl.config, sLbl.netW, sLbl.netH, sLbl.roughW, sLbl.roughH, "Glass", "Grid / SDL", "Tempered", "Screen", "Hardware", "Shape", "Ext Trim", "Wrap", "Notes", "Units", ""].filter(Boolean).map((h, i) =>
                 <th key={i} style={{ padding: "5px 3px", textAlign: "left", fontWeight: 600, fontSize: 9, whiteSpace: "nowrap", borderRight: "1px solid #1a5a7a", background: i % 2 === 0 ? "#004f7a" : NAVY }}>{h}</th>
               )}
             </tr></thead>
@@ -1385,7 +1421,8 @@ export default function App() {
               return (<React.Fragment key={w.id}>
                 <tr style={{ borderBottom: isMull ? "none" : "1px solid #ddd" }}>
                   <td style={{ padding: "4px 3px", fontWeight: 600, background: "#EEF3F8" }}>{i + 1}</td>
-                  <td style={{ padding: "4px 3px", background: "#fff" }}>{w.location}</td>
+                  {proj.showBrand2 && <td style={{ padding: "4px 3px", textAlign: "center", fontWeight: 700, color: w.winLine === "2" ? ORANGE : NAVY, background: "#fff" }}>{w.winLine || "1"}</td>}
+                  <td style={{ padding: "4px 3px", background: proj.showBrand2 ? "#EEF3F8" : "#fff" }}>{w.location}</td>
                   <td style={{ padding: "4px 3px", textAlign: "center", background: "#EEF3F8" }}>{w.qty}</td>
                   <td style={{ padding: "4px 3px", fontWeight: 600, background: "#fff" }}>{w.type}{shapeName}</td>
                   <td style={{ padding: "4px 3px", background: "#EEF3F8" }}>{w.config}</td>
@@ -1439,11 +1476,12 @@ export default function App() {
                         </div>
                         {w.mullSpanTop && w.mullSpanTopType && <div style={{ fontSize: 9, color: ORANGE, fontWeight: 700, marginBottom: 4 }}>Spanning Top: {SHAPE_PRESETS.find(s=>s.code===w.mullSpanTopType)?.name || w.mullSpanTopType}{w.mullSpanTopH ? ` — ${w.mullSpanTopH}"` : ""}</div>}
                         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 9 }}>
-                          <thead><tr style={{ background: GRAY_BG }}>{["Unit","Top","Top H","Main Type","Net W","Net H","Glass","Grid","Screen","Tempered","Bottom","Bot H"].map((h,hi) => <th key={hi} style={{ padding: "2px 4px", textAlign: "left", fontWeight: 700, color: NAVY, borderBottom: `1px solid ${GRAY_BORDER}` }}>{h}</th>)}</tr></thead>
+                          <thead><tr style={{ background: GRAY_BG }}>{["Unit","Top","Top H","Main Type","Net W","Net H","Glass","Grid","Pattern","Lites","Screen","Tempered","Bottom","Bot H"].map((h,hi) => <th key={hi} style={{ padding: "2px 4px", textAlign: "left", fontWeight: 700, color: NAVY, borderBottom: `1px solid ${GRAY_BORDER}` }}>{h}</th>)}</tr></thead>
                           <tbody>{mullParsed.map((u, ui) => {
                             const topName = u.topType ? (SHAPE_PRESETS.find(s=>s.code===u.topType)?.name || WINDOW_TYPES.find(t=>t.code===u.topType)?.name || u.topType) : "—";
                             const botName = u.bottomType ? (WINDOW_TYPES.find(t=>t.code===u.bottomType)?.name || u.bottomType) : "—";
                             const mainName = WINDOW_TYPES.find(t=>t.code===u.type)?.name || u.type;
+                            const hasGrid = u.gridType && u.gridType !== "None";
                             return (<tr key={u.id || ui} style={{ borderBottom: "1px solid #eee" }}>
                               <td style={{ padding: "2px 4px", fontWeight: 700, color: ORANGE }}>U{ui+1}</td>
                               <td style={{ padding: "2px 4px" }}>{topName}</td>
@@ -1452,7 +1490,9 @@ export default function App() {
                               <td style={{ padding: "2px 4px" }}>{u.unitNetW ? `${u.unitNetW}"` : "—"}</td>
                               <td style={{ padding: "2px 4px" }}>{u.unitNetH ? `${u.unitNetH}"` : "—"}</td>
                               <td style={{ padding: "2px 4px" }}>{u.glass || "DP LoE2 Ar"}</td>
-                              <td style={{ padding: "2px 4px" }}>{u.gridType && u.gridType !== "None" ? u.gridType : "—"}</td>
+                              <td style={{ padding: "2px 4px" }}>{hasGrid ? u.gridType : "—"}</td>
+                              <td style={{ padding: "2px 4px" }}>{hasGrid && u.gridPattern ? u.gridPattern : ""}</td>
+                              <td style={{ padding: "2px 4px" }}>{hasGrid && (u.litesW || u.litesH) ? `${u.litesW||"—"}x${u.litesH||"—"}` : ""}</td>
                               <td style={{ padding: "2px 4px" }}>{u.screen || "Full"}</td>
                               <td style={{ padding: "2px 4px" }}>{u.tempered && u.tempered !== "No" ? u.tempered : ""}</td>
                               <td style={{ padding: "2px 4px" }}>{botName}</td>
@@ -1466,7 +1506,7 @@ export default function App() {
                 )}
               </React.Fragment>);
             })}</tbody>
-            <tfoot><tr style={{ background: NAVY, color: "#fff", fontWeight: 700 }}><td colSpan="2" style={{ padding: "5px 6px" }}>TOTALS</td><td style={{ padding: "5px 3px", textAlign: "center" }}>{tQty}</td><td colSpan="15" /><td style={{ padding: "5px 3px", textAlign: "center", color: ORANGE, fontSize: 12 }}>{tPcs}</td><td /></tr></tfoot>
+            <tfoot><tr style={{ background: NAVY, color: "#fff", fontWeight: 700 }}><td colSpan="2" style={{ padding: "5px 6px" }}>TOTALS</td>{proj.showBrand2 && <td />}<td style={{ padding: "5px 3px", textAlign: "center" }}>{tQty}</td><td colSpan="15" /><td style={{ padding: "5px 3px", textAlign: "center", color: ORANGE, fontSize: 12 }}>{tPcs}</td><td /></tr></tfoot>
           </table>
         </div>
         {(parseFloat(matSum.jLF) > 0 || parseFloat(matSum.cLF) > 0 || parseFloat(matSum.eLF) > 0) && (() => {
@@ -1546,9 +1586,9 @@ export default function App() {
               <td style={{ padding: "4px 3px", textAlign: "center" }}>{d.qty}</td><td style={{ padding: "4px 3px" }}>{d.handing}</td><td style={{ padding: "4px 3px" }}>{d.operation}</td>
               <td style={{ padding: "4px 3px" }}>{d.netW}</td><td style={{ padding: "4px 3px" }}>{d.netH}</td><td style={{ padding: "4px 3px" }}>{d.roughW}</td><td style={{ padding: "4px 3px" }}>{d.roughH}</td>
               <td style={{ padding: "4px 3px" }}>{d.glassConfig}</td><td style={{ padding: "4px 3px" }}>{d.glass}{d.glassTexture !== "Clear" ? ` ${d.glassTexture}` : ""}</td>
-              <td style={{ padding: "4px 3px" }}>{d.jambThickness}</td><td style={{ padding: "4px 3px" }}>{d.sidelites !== "None" ? `${d.sidelites}${d.sidelites === "Both" ? ` L:${d.sideliteWLeft||"?"}"/R:${d.sideliteWRight||"?"}"` : d.sideliteW ? ` ${d.sideliteW}"` : ""}` : ""}</td>
+              <td style={{ padding: "4px 3px" }}>{d.jambThickness}</td><td style={{ padding: "4px 3px" }}>{d.sidelites !== "None" ? `${d.sidelites}${d.sidelites === "Both" ? ` L:${d.sideliteWLeft||"?"}"/R:${d.sideliteWRight||"?"}"` : d.sideliteW ? ` ${d.sideliteW}"` : ""}${d.sideliteGlassTexture && d.sideliteGlassTexture !== "Clear" ? ` (${d.sideliteGlassTexture})` : ""}` : ""}</td>
               <td style={{ padding: "4px 3px" }}>{d.threshold}</td><td style={{ padding: "4px 3px" }}>{d.doorScreen}</td>
-              <td style={{ padding: "4px 3px", fontSize: 9 }}>{d.hardwareColor} {d.hardwareType}</td><td style={{ padding: "4px 3px" }}>{d.doorWrap}</td><td style={{ padding: "4px 3px", fontSize: 9 }}>{[d.notes, d.transom && d.transomH ? `Transom: ${d.transomH}"` : "", d.doorShape && d.doorShape !== "Square Top" ? `Shape: ${d.doorShape}${d.doorShapeNotes ? ` (${d.doorShapeNotes})` : ""}` : ""].filter(Boolean).join(" | ")}</td>
+              <td style={{ padding: "4px 3px", fontSize: 9 }}>{[d.hardwareType === "Custom" ? d.hardwareTypeCustom : d.hardwareType, d.hardwareColor === "Custom" ? d.hardwareColorCustom : d.hardwareColor].filter(Boolean).join(" / ")}</td><td style={{ padding: "4px 3px" }}>{d.doorWrap}</td><td style={{ padding: "4px 3px", fontSize: 9 }}>{[d.notes, d.transom && d.transomH ? `Transom: ${d.transomH}"` : "", d.doorShape && d.doorShape !== "Square Top" ? `Shape: ${d.doorShape}${d.doorShapeNotes ? ` (${d.doorShapeNotes})` : ""}` : ""].filter(Boolean).join(" | ")}</td>
               <td style={{ padding: "2px 3px", textAlign: "center" }}><DoorIcon type={d.type} sidelites={d.sidelites} transom={d.transom} glassConfig={d.glassConfig} handing={d.handing} operation={d.operation} /></td>
             </tr>)}</tbody>
           </table>
@@ -1573,7 +1613,7 @@ export default function App() {
             <div style={{ fontSize: 14, fontWeight: 800, color: NAVY, marginBottom: 8, borderBottom: `3px solid ${ORANGE}`, paddingBottom: 4 }}>WINDOW MATERIAL ORDER</div>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 9 }}>
               <thead><tr style={{ background: NAVY, color: "#fff" }}>
-                {["#", "Location", "Qty", "Jamb Size", "Jamb Species", "Jamb Finish", "Jamb Color", "Jamb LF", "Jamb Pcs", "Casing Size", "Casing Species", "Casing Finish", "Casing Color", "Casing LF", "Casing Pcs", "Ext Trim Brand", "Ext Trim Size", "Ext Trim Color", "Ext Trim LF", "Stool Size", "Stool Len", "Wrap", "Wrap LF"].map((h, hi) =>
+                {["#", "Location", "Qty", "Jamb Size", "Jamb Species", "Jamb Finish", "Jamb Color", "Jamb LF", "Jamb Pcs", "Jamb Stock", "Casing Size", "Casing Species", "Casing Finish", "Casing Color", "Casing LF", "Casing Pcs", "Casing Stock", "Ext Trim Brand", "Ext Trim Size", "Ext Trim Color", "Ext Trim LF", "Ext Stock", "Stool Size", "Stool Len", "Wrap", "Wrap LF"].map((h, hi) =>
                   <th key={hi} style={{ padding: "3px 2px", fontSize: 7, fontWeight: 600, whiteSpace: "nowrap", borderRight: "1px solid #1a5a7a" }}>{h}</th>
                 )}
               </tr></thead>
@@ -1602,16 +1642,19 @@ export default function App() {
                   <td style={td}>{w.jamb ? jCol || "" : ""}</td>
                   <td style={{ ...td, fontWeight: 600 }}>{w.jamb && m ? m.jambLF : ""}</td>
                   <td style={td}>{w.jamb && m ? m.jambPcs : ""}</td>
+                  <td style={{ ...td, fontSize: 7, color: GREEN }}>{w.jamb && m ? m.jambBuy : ""}</td>
                   <td style={td}>{w.casing ? cSz || "" : "—"}</td>
                   <td style={td}>{w.casing ? w.casingSpecies || "" : ""}</td>
                   <td style={td}>{w.casing ? w.casingFinish || "" : ""}</td>
                   <td style={td}>{w.casing ? cCol || "" : ""}</td>
                   <td style={{ ...td, fontWeight: 600 }}>{w.casing && m ? m.casingLF : ""}</td>
                   <td style={td}>{w.casing && m ? m.casingPcs : ""}</td>
+                  <td style={{ ...td, fontSize: 7, color: GREEN }}>{w.casing && m ? m.casingBuy : ""}</td>
                   <td style={{ ...td, color: w.extTrim ? getTrimBrandColor(w.extTrimBrand) : undefined, fontWeight: w.extTrim ? 700 : 400 }}>{w.extTrim ? extB || "" : "—"}</td>
                   <td style={td}>{w.extTrim ? w.extTrimSize || "" : ""}</td>
                   <td style={td}>{w.extTrim ? extCol || "" : ""}</td>
                   <td style={{ ...td, fontWeight: 600 }}>{w.extTrim && m ? m.extLF : ""}</td>
+                  <td style={{ ...td, fontSize: 7, color: GREEN }}>{w.extTrim && m ? m.extBuy : ""}</td>
                   <td style={td}>{w.stools ? stoolSz || "" : "—"}</td>
                   <td style={td}>{w.stools && stoolLen ? `${stoolLen}"` : ""}</td>
                   <td style={td}>{wrapDesc || (w.wrapTrim ? "Wrap" : "—")}</td>
@@ -1621,11 +1664,11 @@ export default function App() {
               <tfoot><tr style={{ background: NAVY, color: "#fff", fontWeight: 700, fontSize: 8 }}>
                 <td colSpan="7" style={{ padding: "4px 3px" }}>TOTALS</td>
                 <td style={{ padding: "4px 2px" }}>{matSum.jLF} LF</td><td style={{ padding: "4px 2px" }}>{matSum.jP}</td>
-                <td colSpan="4" />
+                <td colSpan="5" />
                 <td style={{ padding: "4px 2px" }}>{matSum.cLF} LF</td><td style={{ padding: "4px 2px" }}>{matSum.cP}</td>
-                <td colSpan="3" />
-                <td style={{ padding: "4px 2px" }}>{matSum.eLF} LF</td>
                 <td colSpan="4" />
+                <td style={{ padding: "4px 2px" }}>{matSum.eLF} LF</td>
+                <td colSpan="5" />
               </tr></tfoot>
             </table>
           </div>
@@ -1635,7 +1678,7 @@ export default function App() {
             <div style={{ fontSize: 14, fontWeight: 800, color: NAVY, marginBottom: 8, borderBottom: `3px solid ${ORANGE}`, paddingBottom: 4 }}>DOOR MATERIAL ORDER</div>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 9 }}>
               <thead><tr style={{ background: NAVY, color: "#fff" }}>
-                {["#", "Location", "Type", "Qty", "Jamb Size", "Species", "Finish", "Color", "Jamb LF", "Pcs", "Casing Size", "Species", "Finish", "Color", "Casing LF", "Pcs", "Ext Trim Brand", "Size", "Color", "Ext Trim LF", "Wrap", "Wrap LF"].map((h, hi) =>
+                {["#", "Location", "Type", "Qty", "Jamb Size", "Species", "Finish", "Color", "Jamb LF", "Pcs", "Jamb Stock", "Casing Size", "Species", "Finish", "Color", "Casing LF", "Pcs", "Casing Stock", "Ext Trim Brand", "Size", "Color", "Ext Trim LF", "Ext Stock", "Wrap", "Wrap LF"].map((h, hi) =>
                   <th key={hi} style={{ padding: "3px 2px", fontSize: 7, fontWeight: 600, whiteSpace: "nowrap", borderRight: "1px solid #1a5a7a" }}>{h}</th>
                 )}
               </tr></thead>
@@ -1663,16 +1706,19 @@ export default function App() {
                   <td style={td}>{d.jamb ? jCol || "" : ""}</td>
                   <td style={{ ...td, fontWeight: 600 }}>{d.jamb && m ? m.jambLF : ""}</td>
                   <td style={td}>{d.jamb && m ? m.jambPcs : ""}</td>
+                  <td style={{ ...td, fontSize: 7, color: GREEN }}>{d.jamb && m ? m.jambBuy : ""}</td>
                   <td style={td}>{d.casing ? cSz || "" : "—"}</td>
                   <td style={td}>{d.casing ? d.casingSpecies || "" : ""}</td>
                   <td style={td}>{d.casing ? d.casingFinish || "" : ""}</td>
                   <td style={td}>{d.casing ? cCol || "" : ""}</td>
                   <td style={{ ...td, fontWeight: 600 }}>{d.casing && m ? m.casingLF : ""}</td>
                   <td style={td}>{d.casing && m ? m.casingPcs : ""}</td>
+                  <td style={{ ...td, fontSize: 7, color: GREEN }}>{d.casing && m ? m.casingBuy : ""}</td>
                   <td style={{ ...td, color: d.extTrim ? getTrimBrandColor(d.extTrimBrand) : undefined, fontWeight: d.extTrim ? 700 : 400 }}>{d.extTrim ? extB || "" : "—"}</td>
                   <td style={td}>{d.extTrim ? d.extTrimSize || "" : ""}</td>
                   <td style={td}>{d.extTrim ? extCol || "" : ""}</td>
                   <td style={{ ...td, fontWeight: 600 }}>{d.extTrim && m ? m.extLF : ""}</td>
+                  <td style={{ ...td, fontSize: 7, color: GREEN }}>{d.extTrim && m ? m.extBuy : ""}</td>
                   <td style={td}>{wrapDesc || (d.wrapTrim ? "Wrap" : "—")}</td>
                   <td style={{ ...td, fontWeight: 600 }}>{wrapLF}</td>
                 </tr>);
@@ -1680,15 +1726,38 @@ export default function App() {
               <tfoot><tr style={{ background: NAVY, color: "#fff", fontWeight: 700, fontSize: 8 }}>
                 <td colSpan="8" style={{ padding: "4px 3px" }}>TOTALS</td>
                 <td style={{ padding: "4px 2px" }}>{doorMatSum.jLF} LF</td><td style={{ padding: "4px 2px" }}>{doorMatSum.jP}</td>
-                <td colSpan="4" />
+                <td colSpan="5" />
                 <td style={{ padding: "4px 2px" }}>{doorMatSum.cLF} LF</td><td style={{ padding: "4px 2px" }}>{doorMatSum.cP}</td>
-                <td colSpan="3" />
+                <td colSpan="4" />
                 <td style={{ padding: "4px 2px" }}>{doorMatSum.eLF} LF</td>
-                <td colSpan="2" />
+                <td colSpan="3" />
               </tr></tfoot>
             </table>
           </div>
         )}
+        {/* ====== MISCELLANEOUS ITEMS ====== */}
+        {(() => { const items = (() => { try { return JSON.parse(proj.miscItems || "[]"); } catch(e) { return []; } })(); if (items.length === 0) return null; return (
+          <div style={{ marginTop: 20 }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: NAVY, marginBottom: 8, borderBottom: `3px solid ${ORANGE}`, paddingBottom: 4 }}>MISCELLANEOUS / ADD-ONS</div>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 10 }}>
+              <thead><tr style={{ background: NAVY, color: "#fff" }}>
+                {["#", "Description", "Qty", "Unit", "Notes"].map((h, hi) =>
+                  <th key={hi} style={{ padding: "4px 6px", textAlign: "left", fontWeight: 600, fontSize: 9, borderRight: "1px solid #1a5a7a" }}>{h}</th>
+                )}
+              </tr></thead>
+              <tbody>{items.map((it, ri) => {
+                const bg = ri % 2 === 0 ? "#fff" : "#f9fafb";
+                return (<tr key={it.id || ri}>
+                  <td style={{ padding: "4px 6px", fontWeight: 600, background: bg }}>{ri + 1}</td>
+                  <td style={{ padding: "4px 6px", background: bg }}>{it.desc}</td>
+                  <td style={{ padding: "4px 6px", textAlign: "center", fontWeight: 600, background: bg }}>{it.qty}</td>
+                  <td style={{ padding: "4px 6px", background: bg }}>{it.unit}</td>
+                  <td style={{ padding: "4px 6px", background: bg, color: "#666" }}>{it.notes}</td>
+                </tr>);
+              })}</tbody>
+            </table>
+          </div>
+        ); })()}
       </div>
       <style>{"@media print{[data-noprint]{display:none!important;}body{margin:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}table{page-break-inside:auto;}tr{page-break-inside:avoid;}}"}</style>
     </div>
@@ -2210,8 +2279,7 @@ export default function App() {
                         <select style={sel} value={w.extTrimColor || ""} onChange={e => uw(w.id, "extTrimColor", e.target.value)}>
                           <option value="">-- Select --</option>
                           {colors.map(c => <option key={c} value={c}>{c}</option>)}
-                          {w.extTrimColor && !colors.includes(w.extTrimColor) && w.extTrimColor !== "" && <option value={w.extTrimColor}>{w.extTrimColor}</option>}
-                        </select>
+                                                  </select>
                         {isCustom && <input style={{ ...inp, marginTop: 4, fontSize: 12 }} value={w.extTrimColorCustom || ""} onChange={e => uw(w.id, "extTrimColorCustom", e.target.value)} placeholder="Custom color..." />}
                       </>); })()}
                     </div>
@@ -2684,6 +2752,31 @@ export default function App() {
             </div>
           </div>
         )}
+      </div>
+      {/* ====== MISCELLANEOUS ITEMS ====== */}
+      <div style={{ marginTop: 16, padding: "0 6px 80px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+          <div style={{ fontSize: 14, fontWeight: 800, color: NAVY }}>MISCELLANEOUS / ADD-ONS</div>
+          <button onClick={() => { const items = (() => { try { return JSON.parse(proj.miscItems || "[]"); } catch(e) { return []; } })(); up("miscItems", JSON.stringify([...items, { id: Date.now() + Math.random(), desc: "", qty: 1, unit: "ea", notes: "" }])); }} style={{ ...bP, padding: "6px 14px", fontSize: 12 }}>+ Add Item</button>
+        </div>
+        {(() => { const items = (() => { try { return JSON.parse(proj.miscItems || "[]"); } catch(e) { return []; } })(); if (items.length === 0) return <div style={{ fontSize: 12, color: "#999", padding: 12, textAlign: "center", background: GRAY_BG, borderRadius: 8, border: `1px dashed ${GRAY_BORDER}` }}>No miscellaneous items. Add sealant, shims, hardware kits, or other extras for your supplier order.</div>;
+          const upMisc = (id, f, v) => up("miscItems", JSON.stringify(items.map(it => it.id === id ? { ...it, [f]: v } : it)));
+          const rmMisc = id => up("miscItems", JSON.stringify(items.filter(it => it.id !== id)));
+          return (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {items.map((it, idx) => (
+                <div key={it.id} style={{ display: "grid", gridTemplateColumns: "auto 1fr 60px 70px 1fr auto", gap: 8, alignItems: "center", padding: "8px 10px", background: idx % 2 === 0 ? "#fff" : GRAY_BG, border: `1px solid ${GRAY_BORDER}`, borderRadius: 6 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: ORANGE }}>{idx + 1}</span>
+                  <input value={it.desc} onChange={e => upMisc(it.id, "desc", e.target.value)} placeholder="Item description..." style={{ width: "100%", padding: "6px 8px", fontSize: 12, border: `1px solid ${GRAY_BORDER}`, borderRadius: 5, boxSizing: "border-box" }} />
+                  <input type="number" min="1" value={it.qty} onChange={e => upMisc(it.id, "qty", e.target.value)} style={{ width: "100%", padding: "6px 8px", fontSize: 12, border: `1px solid ${GRAY_BORDER}`, borderRadius: 5, boxSizing: "border-box", textAlign: "center" }} />
+                  <select value={it.unit || "ea"} onChange={e => upMisc(it.id, "unit", e.target.value)} style={{ width: "100%", padding: "6px 8px", fontSize: 12, border: `1px solid ${GRAY_BORDER}`, borderRadius: 5, appearance: "auto" }}><option value="ea">each</option><option value="tube">tube</option><option value="roll">roll</option><option value="box">box</option><option value="bag">bag</option><option value="set">set</option><option value="LF">LF</option><option value="SF">SF</option></select>
+                  <input value={it.notes || ""} onChange={e => upMisc(it.id, "notes", e.target.value)} placeholder="Notes..." style={{ width: "100%", padding: "6px 8px", fontSize: 12, border: `1px solid ${GRAY_BORDER}`, borderRadius: 5, boxSizing: "border-box" }} />
+                  <button onClick={() => rmMisc(it.id)} style={{ padding: "4px 8px", fontSize: 11, background: "#fee2e2", color: "#dc2626", border: "1px solid #fca5a5", borderRadius: 4, cursor: "pointer" }}>X</button>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
       </div>
       <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "#fff", borderTop: `2px solid ${NAVY}`, padding: "8px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", zIndex: 50, boxShadow: "0 -2px 12px rgba(0,0,0,0.1)" }}>
         <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
